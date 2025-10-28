@@ -20,8 +20,6 @@ namespace StudentManagement5GoodTempp
         [STAThread]
         static void Main()
         {
-            // Setup encoding và culture cho toàn bộ application
-            GlobalVietnameseFixer.SetupApplicationEncoding();
 
             // Apply emergency thread fix to prevent cross-thread errors
             UserDashboardThreadSafePatch.EmergencyThreadFix();
@@ -54,7 +52,7 @@ namespace StudentManagement5GoodTempp
                 // Apply Vietnamese fix sau khi form được tạo
                 mainForm.Load += (sender, e) => 
                 {
-                    GlobalVietnameseFixer.FixAllControlsInForm(mainForm);
+
                 };
                 
                 Application.Run(mainForm);
@@ -92,7 +90,7 @@ namespace StudentManagement5GoodTempp
             // Add other forms as transient to ensure fresh instances
             services.AddTransient<UserDashboard>();
             services.AddTransient<StudentDashboard>();
-            services.AddTransient<MinhChungApprovalForm>();
+            // services.AddTransient<MinhChungApprovalForm>();
             services.AddTransient<MinhChungForm>();
 
             // Add other services as needed

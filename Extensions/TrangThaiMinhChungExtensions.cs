@@ -15,11 +15,11 @@ namespace StudentManagement5Good.Winform
         {
             return trangThai switch
             {
-                TrangThaiMinhChung.ChoDuyet => "Ch? duy?t",
-                TrangThaiMinhChung.DaDuyet => "�? duy?t", 
-                TrangThaiMinhChung.BiTuChoi => "T? ch?i",
-                TrangThaiMinhChung.CanBoSung => "C?n b? sung",
-                _ => "Kh�ng x�c �?nh"
+                TrangThaiMinhChung.ChoDuyet => "Chờ duyệt",
+                TrangThaiMinhChung.DaDuyet => "Đã duyệt", 
+                TrangThaiMinhChung.BiTuChoi => "Từ chối",
+                TrangThaiMinhChung.CanBoSung => "Cần bổ sung",
+                _ => "Không xác định"
             };
         }
 
@@ -64,11 +64,11 @@ namespace StudentManagement5Good.Winform
         {
             return trangThai switch
             {
-                TrangThaiMinhChung.ChoDuyet => "?",
-                TrangThaiMinhChung.DaDuyet => "?",
-                TrangThaiMinhChung.BiTuChoi => "?",
-                TrangThaiMinhChung.CanBoSung => "??",
-                _ => "?"
+                TrangThaiMinhChung.ChoDuyet => "⏳",
+                TrangThaiMinhChung.DaDuyet => "✅",
+                TrangThaiMinhChung.BiTuChoi => "❌",
+                TrangThaiMinhChung.CanBoSung => "📝",
+                _ => "❓"
             };
         }
 
@@ -79,11 +79,11 @@ namespace StudentManagement5Good.Winform
         {
             return trangThai switch
             {
-                TrangThaiMinhChung.ChoDuyet => "Minh ch?ng �ang ch? ��?c x�t duy?t b?i c�n b? ph? tr�ch",
-                TrangThaiMinhChung.DaDuyet => "Minh ch?ng �? ��?c duy?t v� ch?p nh?n",
-                TrangThaiMinhChung.BiTuChoi => "Minh ch?ng b? t? ch?i, kh�ng ��p ?ng y�u c?u",
-                TrangThaiMinhChung.CanBoSung => "Minh ch?ng c?n ��?c b? sung th�m th�ng tin ho?c t�i li?u",
-                _ => "Tr?ng th�i kh�ng x�c �?nh"
+                TrangThaiMinhChung.ChoDuyet => "Minh chứng đang chờ được xét duyệt bởi cán bộ phụ trách",
+                TrangThaiMinhChung.DaDuyet => "Minh chứng đã được duyệt và chấp nhận",
+                TrangThaiMinhChung.BiTuChoi => "Minh chứng bị từ chối, không đáp ứng yêu cầu",
+                TrangThaiMinhChung.CanBoSung => "Minh chứng cần được bổ sung thêm thông tin hoặc tài liệu",
+                _ => "Trạng thái không xác định"
             };
         }
         
@@ -112,15 +112,15 @@ namespace StudentManagement5Good.Winform
         {
             return role switch
             {
-                UserRoles.ADMIN => "Qu?n tr? vi�n T?i cao",
-                UserRoles.GIAOVU => "Gi�o v?",
-                UserRoles.CVHT => "C? v?n H?c t?p", 
-                UserRoles.DOANKHOA => "BCH �o�n Khoa",
-                UserRoles.DOANTRUONG => "BCH �o�n Tr�?ng",
-                UserRoles.DOANTP => "BCH �o�n Th�nh ph?",
-                UserRoles.DOANTU => "BCH �o�n Trung ��ng",
-                UserRoles.SINHVIEN => "Sinh vi�n",
-                _ => "Ng�?i d�ng"
+                UserRoles.ADMIN => "Quản trị viên Tối cao",
+                UserRoles.GIAOVU => "Giáo vụ",
+                UserRoles.CVHT => "Cố vấn Học tập", 
+                UserRoles.DOANKHOA => "BCH Đoàn Khoa",
+                UserRoles.DOANTRUONG => "BCH Đoàn Trường",
+                UserRoles.DOANTP => "BCH Đoàn Thành phố",
+                UserRoles.DOANTU => "BCH Đoàn Trung ương",
+                UserRoles.SINHVIEN => "Sinh viên",
+                _ => "Người dùng"
             };
         }
     }

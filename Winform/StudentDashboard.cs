@@ -347,7 +347,7 @@ namespace StudentManagement5Good.Winform
                 {
                     // Kiểm tra CapXet null trước khi truy cập TenCap
                     var capXetText = finalResult.CapXet?.TenCap ?? finalResult.MaCap ?? "Không xác định";
-                    lblOverallStatus.Text = $"🏆 Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capXetText})";
+                    lblOverallStatus.Text = $"Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capXetText})";
                     lblOverallStatus.ForeColor = Color.FromArgb(46, 204, 113);
                 }
                 else

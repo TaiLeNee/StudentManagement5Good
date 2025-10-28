@@ -39,7 +39,7 @@ namespace StudentManagement5Good.Winform
             InitializeUserInterface();
         }
 
-        // Constructor c? �? backward compatibility
+        // Constructor cũ để backward compatibility
         public UserDashboard(StudentManagementDbContext context, IUserService userService, 
                            IStudentService studentService, User currentUser)
             : this(StudentManagement5GoodTempp.Program.ServiceProvider, userService, studentService, currentUser)
@@ -50,16 +50,13 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                // Áp dụng patch tiếng Việt ngay sau khi load
-                UserDashboardVietnamesePatch.ApplyVietnamesePatch(this);
-                
+    
                 await LoadCurrentAcademicYear();
                 await LoadDashboardData();
                 ConfigureUIBasedOnRole();
                 ShowDashboardModule();
                 
-                // Áp dụng lại patch sau khi load dữ liệu
-                UserDashboardVietnamesePatch.ApplyVietnamesePatch(this);
+
             }
             catch (Exception ex)
             {
@@ -71,7 +68,7 @@ namespace StudentManagement5Good.Winform
         private void InitializeUserInterface()
         {
             // Set form properties
-            this.Text = $"H? th?ng Qu?n l? Sinh vi�n 5 T?t - {_currentUser.HoTen}";
+            this.Text = $"Hệ thống Quản lý Sinh viên 5 Tốt - {_currentUser.HoTen}";
             
             // Set user info in header and navigation
             lblUserInfo.Text = $"Chào mừng, {_currentUser.HoTen}";
@@ -138,12 +135,12 @@ namespace StudentManagement5Good.Winform
                 }
 
                 // System status
-                lblSystemStatusInfo.Text = "Ho?t �?ng";
+                lblSystemStatusInfo.Text = "Hoạt động";
                 lblSystemStatusInfo.ForeColor = Color.White;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i d? li?u: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -157,35 +154,35 @@ namespace StudentManagement5Good.Winform
                     break;
                     
                 case UserRoles.GIAOVU:
-                    // Gi�o v?: Manage student data, import students, limited system config
+                    // Giáo vụ: Manage student data, import students, limited system config
                     btnSystemConfig.Enabled = false; // No access to system config
                     break;
                     
                 case UserRoles.DOANTRUONG:
-                    // �o�n Tr�?ng: Approve school-level, view all reports, manage �o�n Khoa accounts
+                    // Đoàn Trường: Approve school-level, view all reports, manage Đoàn Khoa accounts
                     btnSystemConfig.Enabled = false; // No system config
                     break;
                     
                 case UserRoles.DOANKHOA:
-                    // �o�n Khoa: Approve faculty-level, manage CVHT accounts, faculty reports
+                    // Đoàn Khoa: Approve faculty-level, manage CVHT accounts, faculty reports
                     btnSystemConfig.Enabled = false; // No system config
                     break;
                     
                 case UserRoles.CVHT:
-                    // C? v?n H?c t?p: Approve class-level only, import class students
+                    // Cố vấn Học tập: Approve class-level only, import class students
                     btnUserManagement.Enabled = true; // Can import students for their class
                     btnReportsStats.Enabled = false; // Limited reporting
                     btnSystemConfig.Enabled = false; // No system config
                     break;
                     
                 case UserRoles.DOANTP:
-                    // �o�n Th�nh ph?: View reports, manage �o�n Tr�?ng accounts
+                    // Đoàn Thành phố: View reports, manage Đoàn Trường accounts
                     btnApprovalCenter.Enabled = false; // Read-only approval view
                     btnSystemConfig.Enabled = false;
                     break;
                     
                 case UserRoles.DOANTU:
-                    // �o�n Trung ��ng: View high-level reports, manage �o�n TP accounts
+                    // Đoàn Trung ương: View high-level reports, manage Đoàn TP accounts
                     btnApprovalCenter.Enabled = false; // Read-only approval view
                     btnSystemConfig.Enabled = false;
                     break;
@@ -203,22 +200,22 @@ namespace StudentManagement5Good.Winform
         {
             // Initialize status filter
             cmbStatusFilter.Items.Clear();
-            cmbStatusFilter.Items.Add("T?t c?");
-            cmbStatusFilter.Items.Add("Ch? duy�t");
-            cmbStatusFilter.Items.Add("�? duy�t");
-            cmbStatusFilter.Items.Add("T? ch?i");
-            cmbStatusFilter.Items.Add("C?n b? sung");
+            cmbStatusFilter.Items.Add("Tất cả");
+            cmbStatusFilter.Items.Add("Chờ duyệt");
+            cmbStatusFilter.Items.Add("Đã duyệt");
+            cmbStatusFilter.Items.Add("Từ chối");
+            cmbStatusFilter.Items.Add("Cần bổ sung");
             cmbStatusFilter.SelectedIndex = 0;
 
             // Initialize department filter
             cmbDepartmentFilter.Items.Clear();
-            cmbDepartmentFilter.Items.Add("T?t c? ��n v?");
+            cmbDepartmentFilter.Items.Add("Tất cả đơn vị");
             // Add departments from database
             LoadDepartments();
 
             // Initialize criteria filter
             cmbCriteriaFilter.Items.Clear();
-            cmbCriteriaFilter.Items.Add("T?t c? ti�u ch�");
+            cmbCriteriaFilter.Items.Add("Tất cả tiêu chí");
             LoadCriteria();
 
             // Initialize report filters
@@ -274,17 +271,17 @@ namespace StudentManagement5Good.Winform
         {
             // Report type filter
             cmbReportType.Items.Clear();
-            cmbReportType.Items.Add("Danh s�ch sinh vi�n �?t danh hi?u");
-            cmbReportType.Items.Add("Th?ng k� theo ti�u ch�");
-            cmbReportType.Items.Add("B�o c�o t?ng h?p");
-            cmbReportType.Items.Add("Ti�n �? x�t duy?t");
+            cmbReportType.Items.Add("Danh sách sinh viên đạt danh hiệu");
+            cmbReportType.Items.Add("Thống kê theo tiêu chí");
+            cmbReportType.Items.Add("Báo cáo tổng hợp");
+            cmbReportType.Items.Add("Tiến độ xét duyệt");
             cmbReportType.SelectedIndex = 0;
 
             // Report level filter
             cmbReportLevel.Items.Clear();
-            cmbReportLevel.Items.Add("C?p Tr�?ng");
-            cmbReportLevel.Items.Add("C?p Khoa");
-            cmbReportLevel.Items.Add("C?p L?p");
+            cmbReportLevel.Items.Add("Cấp Trường");
+            cmbReportLevel.Items.Add("Cấp Khoa");
+            cmbReportLevel.Items.Add("Cấp Lớp");
             cmbReportLevel.SelectedIndex = 0;
 
             // Set default date range
@@ -296,21 +293,21 @@ namespace StudentManagement5Good.Winform
         {
             return role switch
             {
-                // Nh�m Qu?n tr? H? th?ng
-                UserRoles.ADMIN => "Qu?n tr? vi�n T?i cao",
-                UserRoles.GIAOVU => "Gi�o v?",
+                // Nhóm Quản trị Hệ thống
+                UserRoles.ADMIN => "Quản trị viên Tối cao",
+                UserRoles.GIAOVU => "Giáo vụ",
                 
-                // Nh�m X�t duy?t & Qu?n l? Nghi?p v? (t? th?p �?n cao)
-                UserRoles.CVHT => "C? v?n H?c t?p",
-                UserRoles.DOANKHOA => "BCH �o�n Khoa",
-                UserRoles.DOANTRUONG => "BCH �o�n Tr�?ng",
-                UserRoles.DOANTP => "BCH �o�n Th�nh ph?",
-                UserRoles.DOANTU => "BCH �o�n Trung ��ng",
+                // Nhóm Xét duyệt & Quản lý Nghiệp vụ (từ thấp đến cao)
+                UserRoles.CVHT => "Cố vấn Học tập",
+                UserRoles.DOANKHOA => "BCH Đoàn Khoa",
+                UserRoles.DOANTRUONG => "BCH Đoàn Trường",
+                UserRoles.DOANTP => "BCH Đoàn Thành phố",
+                UserRoles.DOANTU => "BCH Đoàn Trung ương",
                 
-                // Nh�m Ng�?i tham gia
-                UserRoles.SINHVIEN => "Sinh vi�n",
+                // Nhóm Người tham gia
+                UserRoles.SINHVIEN => "Sinh viên",
                 
-                _ => "Ng�?i d�ng"
+                _ => "Người dùng"
             };
         }
 
@@ -370,7 +367,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i m? form x�t duy?t: {ex.Message}\n\nChi ti�t: {ex.InnerException?.Message}", "L?i",
+                MessageBox.Show($"Lỗi mở form xét duyệt: {ex.Message}\n\nChi tiết: {ex.InnerException?.Message}", "Lỗi",
                               MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -503,7 +500,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i d? li?u x�t duy?t: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải dữ liệu xét duyệt: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -511,10 +508,10 @@ namespace StudentManagement5Good.Winform
         {
             return filterText switch
             {
-                "Ch? duy�t" => TrangThaiMinhChung.ChoDuyet,
-                "�? duy�t" => TrangThaiMinhChung.DaDuyet,
-                "T? ch?i" => TrangThaiMinhChung.BiTuChoi,
-                "C?n b? sung" => TrangThaiMinhChung.CanBoSung,
+                "Chờ duyệt" => TrangThaiMinhChung.ChoDuyet,
+                "Đã duyệt" => TrangThaiMinhChung.DaDuyet,
+                "Từ chối" => TrangThaiMinhChung.BiTuChoi,
+                "Cần bổ sung" => TrangThaiMinhChung.CanBoSung,
                 _ => TrangThaiMinhChung.ChoDuyet
             };
         }
@@ -523,11 +520,11 @@ namespace StudentManagement5Good.Winform
         {
             return status switch
             {
-                TrangThaiMinhChung.ChoDuyet => "Ch? duy?t",
-                TrangThaiMinhChung.DaDuyet => "�? duy?t",
-                TrangThaiMinhChung.BiTuChoi => "T? ch?i",
-                TrangThaiMinhChung.CanBoSung => "C?n b? sung",
-                _ => "Kh�ng x�c �?nh"
+                TrangThaiMinhChung.ChoDuyet => "Chờ duyệt",
+                TrangThaiMinhChung.DaDuyet => "Đã duyệt",
+                TrangThaiMinhChung.BiTuChoi => "Từ chối",
+                TrangThaiMinhChung.CanBoSung => "Cần bổ sung",
+                _ => "Không xác định"
             };
         }
 
@@ -565,12 +562,12 @@ namespace StudentManagement5Good.Winform
                 if (fullEvidence != null)
                 {
                     // Display student info
-                    lblStudentDetails.Text = $"Sinh vi�n: {fullEvidence.SinhVien?.HoTen}\n" +
+                    lblStudentDetails.Text = $"Sinh viên: {fullEvidence.SinhVien?.HoTen}\n" +
                                            $"MSSV: {fullEvidence.SinhVien?.MaSV}\n" +
-                                           $"L?p: {fullEvidence.SinhVien?.Lop?.TenLop}\n" +
+                                           $"Lớp: {fullEvidence.SinhVien?.Lop?.TenLop}\n" +
                                            $"Khoa: {fullEvidence.SinhVien?.Lop?.Khoa?.TenKhoa}\n" +
-                                           $"Ti�u ch�: {fullEvidence.TieuChi?.TenTieuChi}\n" +
-                                           $"Ng�y n?p: {fullEvidence.NgayNop.ToString("dd/MM/yyyy HH:mm")}";
+                                           $"Tiêu chí: {fullEvidence.TieuChi?.TenTieuChi}\n" +
+                                           $"Ngày nộp: {fullEvidence.NgayNop.ToString("dd/MM/yyyy HH:mm")}";
 
                     // Load evidence file
                     LoadEvidenceFile(fullEvidence);
@@ -583,7 +580,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i chi ti?t minh ch?ng: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải chi tiết minh chứng: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -602,19 +599,19 @@ namespace StudentManagement5Good.Winform
                     {
                         // For non-image files, show file info
                         pictureBoxEvidence.Image = null;
-                        lblEvidenceTitle.Text = $"File: {evidence.TenFile}\nLo?i: {extension}\nK�ch th�?c: {evidence.KichThuocFile} bytes";
+                        lblEvidenceTitle.Text = $"File: {evidence.TenFile}\nLoại: {extension}\nKích thước: {evidence.KichThuocFile} bytes";
                     }
                 }
                 else
                 {
                     pictureBoxEvidence.Image = null;
-                    lblEvidenceTitle.Text = "Kh�ng t?m th?y file minh ch?ng";
+                    lblEvidenceTitle.Text = "Không tìm thấy file minh chứng";
                 }
             }
             catch (Exception ex)
             {
                 pictureBoxEvidence.Image = null;
-                lblEvidenceTitle.Text = $"L?i t?i file: {ex.Message}";
+                lblEvidenceTitle.Text = $"Lỗi tải file: {ex.Message}";
             }
         }
 
@@ -624,8 +621,8 @@ namespace StudentManagement5Good.Winform
 
             try
             {
-                var result = MessageBox.Show("B?n c� ch?c ch?n mu?n duy?t minh ch?ng n�y?", 
-                                           "X�c nh?n duy?t", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                var result = MessageBox.Show("Bạn có chắc chắn muốn duyệt minh chứng này?", 
+                                           "Xác nhận duyệt", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 
                 if (result == DialogResult.Yes)
                 {
@@ -641,7 +638,7 @@ namespace StudentManagement5Good.Winform
                         
                         await context.SaveChangesAsync();
                         
-                        MessageBox.Show("�? duy?t minh ch?ng th�nh c�ng!", "Th�nh c�ng", 
+                        MessageBox.Show("Đã duyệt minh chứng thành công!", "Thành công", 
                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
                         
                         LoadApprovalData(); // Refresh the list
@@ -650,7 +647,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i khi duy?t minh ch?ng: {ex.Message}", "L?i", 
+                MessageBox.Show($"Lỗi khi duyệt minh chứng: {ex.Message}", "Lỗi", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -661,15 +658,15 @@ namespace StudentManagement5Good.Winform
 
             if (string.IsNullOrWhiteSpace(txtRejectionReason.Text))
             {
-                MessageBox.Show("Vui l?ng nh?p l? do t? ch?i!", "C?nh b?o", 
+                MessageBox.Show("Vui lòng nhập lý do từ chối!", "Cảnh báo", 
                               MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             try
             {
-                var result = MessageBox.Show("B?n c� ch?c ch?n mu?n t? ch?i minh ch?ng n�y?", 
-                                           "X�c nh?n t? ch?i", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                var result = MessageBox.Show("Bạn có chắc chắn muốn từ chối minh chứng này?", 
+                                           "Xác nhận từ chối", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 
                 if (result == DialogResult.Yes)
                 {
@@ -686,7 +683,7 @@ namespace StudentManagement5Good.Winform
                         
                         await context.SaveChangesAsync();
                         
-                        MessageBox.Show("�? t? ch?i minh ch?ng!", "Th�nh c�ng", 
+                        MessageBox.Show("Đã từ chối minh chứng!", "Thành công", 
                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
                         
                         txtRejectionReason.Clear();
@@ -696,7 +693,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i khi t? ch?i minh ch?ng: {ex.Message}", "L?i", 
+                MessageBox.Show($"Lỗi khi từ chối minh chứng: {ex.Message}", "Lỗi", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -738,15 +735,15 @@ namespace StudentManagement5Good.Winform
                     row.Cells[0].Value = user.UserId;
                     row.Cells[1].Value = user.HoTen;
                     row.Cells[2].Value = GetRoleDisplayName(user.VaiTro);
-                    row.Cells[3].Value = "Ch�a x�c �?nh";
-                    row.Cells[4].Value = user.TrangThai ? "Ho?t �?ng" : "V� hi?u h�a";
+                    row.Cells[3].Value = "Chưa xác định";
+                    row.Cells[4].Value = user.TrangThai ? "Hoạt động" : "Vô hiệu hóa";
                     row.Tag = user;
                     dataGridViewUsers.Rows.Add(row);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i d? li?u ng�?i d�ng: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải dữ liệu người dùng: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -778,7 +775,7 @@ namespace StudentManagement5Good.Winform
             if (form.ShowDialog() == DialogResult.OK)
             {
                 LoadUserManagementData();
-                MessageBox.Show("Th�m ng�?i d�ng m?i th�nh c�ng!", "Th�nh c�ng", 
+                MessageBox.Show("Thêm người dùng mới thành công!", "Thành công", 
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -788,7 +785,7 @@ namespace StudentManagement5Good.Winform
             // Check permission
             if (_currentUser.VaiTro != UserRoles.GIAOVU && _currentUser.VaiTro != UserRoles.CVHT)
             {
-                MessageBox.Show("B?n kh�ng c� quy?n import sinh vi�n!", "T? ch?i truy c?p", 
+                MessageBox.Show("Bạn không có quyền import sinh viên!", "Từ chối truy cập", 
                               MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -800,14 +797,14 @@ namespace StudentManagement5Good.Winform
             {
                 // Refresh user list after successful import
                 LoadUserManagementData();
-                MessageBox.Show("Import sinh vi�n th�nh c�ng!", "Th�nh c�ng", 
+                MessageBox.Show("Import sinh viên thành công!", "Thành công", 
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
         private void btnExportUsers_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng xu?t danh s�ch ng�?i d�ng s? ��?c tri?n khai", "Th�ng b�o", 
+            MessageBox.Show("Chức năng xuất danh sách người dùng sẽ được triển khai", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -840,28 +837,28 @@ namespace StudentManagement5Good.Winform
         private void LoadSampleReportData()
         {
             // Sample data for demonstration
-            chartStatistics.Series["Statistics"].Points.AddXY("H?c t?p t?t", 85);
-            chartStatistics.Series["Statistics"].Points.AddXY("�?o �?c t?t", 92);
-            chartStatistics.Series["Statistics"].Points.AddXY("Th? l?c t?t", 78);
-            chartStatistics.Series["Statistics"].Points.AddXY("T?nh nguy�n t?t", 65);
-            chartStatistics.Series["Statistics"].Points.AddXY("H?i nh?p t?t", 73);
+            chartStatistics.Series["Statistics"].Points.AddXY("Học tập tốt", 85);
+            chartStatistics.Series["Statistics"].Points.AddXY("Đạo đức tốt", 92);
+            chartStatistics.Series["Statistics"].Points.AddXY("Thể lực tốt", 78);
+            chartStatistics.Series["Statistics"].Points.AddXY("Tình nguyện tốt", 65);
+            chartStatistics.Series["Statistics"].Points.AddXY("Hội nhập tốt", 73);
         }
 
         private void btnGenerateReport_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng t?o b�o c�o s? ��?c tri?n khai", "Th�ng b�o", 
+            MessageBox.Show("Chức năng tạo báo cáo sẽ được triển khai", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnExportExcel_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng xu?t Excel s? ��?c tri?n khai", "Th�ng b�o", 
+            MessageBox.Show("Chức năng xuất Excel sẽ được triển khai", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnExportPDF_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng xu?t PDF s? ��?c tri?n khai", "Th�ng b�o", 
+            MessageBox.Show("Chức năng xuất PDF sẽ được triển khai", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -890,7 +887,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i n�m h?c: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải năm học: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -909,7 +906,7 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i t?i ti�u ch�: {ex.Message}", "L?i", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Lỗi tải tiêu chí: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -921,7 +918,7 @@ namespace StudentManagement5Good.Winform
             if (form.ShowDialog() == DialogResult.OK)
             {
                 LoadAcademicYears();
-                MessageBox.Show("Th�m n�m h?c m?i th�nh c�ng!", "Th�nh c�ng", 
+                MessageBox.Show("Thêm năm học mới thành công!", "Thành công", 
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -930,7 +927,7 @@ namespace StudentManagement5Good.Winform
         {
             if (dataGridViewAcademicYears.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui l?ng ch?n n�m h?c c?n ch?nh s?a!", "C?nh b?o", 
+                MessageBox.Show("Vui lòng chọn năm học cần chỉnh sửa!", "Cảnh báo", 
                               MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -951,7 +948,7 @@ namespace StudentManagement5Good.Winform
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     LoadAcademicYears();
-                    MessageBox.Show("C?p nh?t n�m h?c th�nh c�ng!", "Th�nh c�ng", 
+                    MessageBox.Show("Cập nhật năm học thành công!", "Thành công", 
                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
@@ -961,7 +958,7 @@ namespace StudentManagement5Good.Winform
         {
             if (dataGridViewAcademicYears.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Vui l?ng ch?n n�m h?c c?n x�a!", "C?nh b?o", 
+                MessageBox.Show("Vui lòng chọn năm học cần xóa!", "Cảnh báo", 
                               MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -971,9 +968,9 @@ namespace StudentManagement5Good.Winform
             var tenNH = selectedRow.Cells["TenNH"].Value?.ToString();
             
             var result = MessageBox.Show(
-                $"B?n c� ch?c ch?n mu?n x�a n�m h?c '{tenNH}'?\n\n" +
-                "L�u ?: �i?u n�y c� th? ?nh h�?ng �?n d? li?u li�n quan.",
-                "X�c nh?n x�a",
+                $"Bạn có chắc chắn muốn xóa năm học '{tenNH}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
             
@@ -991,13 +988,13 @@ namespace StudentManagement5Good.Winform
                         await context.SaveChangesAsync();
                         
                         LoadAcademicYears();
-                        MessageBox.Show("X�a n�m h?c th�nh c�ng!", "Th�nh c�ng", 
+                        MessageBox.Show("Xóa năm học thành công!", "Thành công", 
                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Kh�ng th? x�a n�m h?c: {ex.Message}", "L?i", 
+                    MessageBox.Show($"Không thể xóa năm học: {ex.Message}", "Lỗi", 
                                   MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -1005,19 +1002,19 @@ namespace StudentManagement5Good.Winform
 
         private void btnAddCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng th�m ti�u ch� �? b? v� hi?u h�a.", "Th�ng b�o", 
+            MessageBox.Show("Chức năng thêm tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnEditCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng ch?nh s?a ti�u ch� �? b? v� hi?u h�a.", "Th�ng b�o", 
+            MessageBox.Show("Chức năng chỉnh sửa tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnDeleteCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Ch?c n�ng x�o ti�u ch� �? b? v� hi?u h�a.", "Th�ng b�o", 
+            MessageBox.Show("Chức năng xóa tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -1041,19 +1038,19 @@ namespace StudentManagement5Good.Winform
                 else if (panelSystemConfigModule.Visible)
                     LoadSystemConfigData();
                 
-                MessageBox.Show("�? l�m m?i d? li?u!", "Th�ng b�o", 
+                MessageBox.Show("Đã làm mới dữ liệu!", "Thông báo", 
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"L?i l�m m?i d? li?u: {ex.Message}", "L?i", 
+                MessageBox.Show($"Lỗi làm mới dữ liệu: {ex.Message}", "Lỗi", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnLogout_Click(object sender, EventArgs e)
         {
-            var result = MessageBox.Show("B?n c� ch?c ch?n mu?n ��ng xu?t?", "X�c nh�n ��ng xu?t", 
+            var result = MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?", "Xác nhận đăng xuất", 
                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             
             if (result == DialogResult.Yes)

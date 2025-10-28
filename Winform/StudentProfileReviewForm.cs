@@ -68,9 +68,9 @@ namespace StudentManagement5Good.Winform
             // Status filter
             cmbStatusFilter.Items.Clear();
             cmbStatusFilter.Items.Add("Tất cả trạng thái");
-            cmbStatusFilter.Items.Add("⏳ Hồ sơ chờ duyệt");
-            cmbStatusFilter.Items.Add("⚠️ Cần bổ sung");
-            cmbStatusFilter.Items.Add("✅ Đã hoàn tất");
+            cmbStatusFilter.Items.Add("Hồ sơ chờ duyệt");
+            cmbStatusFilter.Items.Add("Cần bổ sung");
+            cmbStatusFilter.Items.Add("Đã hoàn tất");
             cmbStatusFilter.SelectedIndex = 1; // Default: Chờ duyệt
 
             // Unit filter (based on user role)
