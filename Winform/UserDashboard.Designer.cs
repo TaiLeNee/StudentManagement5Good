@@ -146,6 +146,13 @@
             tabPageDeadlines = new TabPage();
             tabPageSystemSettings = new TabPage();
             
+            // Sub-tabs for System Settings
+            tabControlSystemSettings = new TabControl();
+            tabPageKhoa = new TabPage();
+            tabPageLop = new TabPage();
+            tabPageTruong = new TabPage();
+            tabPageThanhPho = new TabPage();
+            
             // Academic Years Tab
             dataGridViewAcademicYears = new DataGridView();
             btnAddAcademicYear = new Button();
@@ -154,9 +161,33 @@
             
             // Criteria Tab
             dataGridViewCriteria = new DataGridView();
+            dataGridViewKhoas = new DataGridView();
+            dataGridViewLops = new DataGridView();
+            dataGridViewTruongs = new DataGridView();
+            dataGridViewThanhPhos = new DataGridView();
             btnAddCriteria = new Button();
             btnEditCriteria = new Button();
             btnDeleteCriteria = new Button();
+            
+            // Buttons for Khoa
+            btnAddKhoa = new Button();
+            btnEditKhoa = new Button();
+            btnDeleteKhoa = new Button();
+            
+            // Buttons for Lop
+            btnAddLop = new Button();
+            btnEditLop = new Button();
+            btnDeleteLop = new Button();
+            
+            // Buttons for Truong
+            btnAddTruong = new Button();
+            btnEditTruong = new Button();
+            btnDeleteTruong = new Button();
+            
+            // Buttons for ThanhPho
+            btnAddThanhPho = new Button();
+            btnEditThanhPho = new Button();
+            btnDeleteThanhPho = new Button();
             
             SuspendLayout();
             
@@ -1449,6 +1480,62 @@
             dataGridViewCriteria.TabIndex = 0;
             
             // 
+            // dataGridViewKhoas
+            // 
+            dataGridViewKhoas.AllowUserToAddRows = false;
+            dataGridViewKhoas.AllowUserToDeleteRows = false;
+            dataGridViewKhoas.BackgroundColor = Color.White;
+            dataGridViewKhoas.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewKhoas.Location = new Point(20, 60);
+            dataGridViewKhoas.Name = "dataGridViewKhoas";
+            dataGridViewKhoas.ReadOnly = true;
+            dataGridViewKhoas.RowHeadersWidth = 51;
+            dataGridViewKhoas.Size = new Size(1040, 500);
+            dataGridViewKhoas.TabIndex = 0;
+            
+            // 
+            // dataGridViewLops
+            // 
+            dataGridViewLops.AllowUserToAddRows = false;
+            dataGridViewLops.AllowUserToDeleteRows = false;
+            dataGridViewLops.BackgroundColor = Color.White;
+            dataGridViewLops.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewLops.Location = new Point(20, 60);
+            dataGridViewLops.Name = "dataGridViewLops";
+            dataGridViewLops.ReadOnly = true;
+            dataGridViewLops.RowHeadersWidth = 51;
+            dataGridViewLops.Size = new Size(1040, 500);
+            dataGridViewLops.TabIndex = 0;
+            
+            // 
+            // dataGridViewTruongs
+            // 
+            dataGridViewTruongs.AllowUserToAddRows = false;
+            dataGridViewTruongs.AllowUserToDeleteRows = false;
+            dataGridViewTruongs.BackgroundColor = Color.White;
+            dataGridViewTruongs.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewTruongs.Location = new Point(20, 60);
+            dataGridViewTruongs.Name = "dataGridViewTruongs";
+            dataGridViewTruongs.ReadOnly = true;
+            dataGridViewTruongs.RowHeadersWidth = 51;
+            dataGridViewTruongs.Size = new Size(1040, 500);
+            dataGridViewTruongs.TabIndex = 0;
+            
+            // 
+            // dataGridViewThanhPhos
+            // 
+            dataGridViewThanhPhos.AllowUserToAddRows = false;
+            dataGridViewThanhPhos.AllowUserToDeleteRows = false;
+            dataGridViewThanhPhos.BackgroundColor = Color.White;
+            dataGridViewThanhPhos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewThanhPhos.Location = new Point(20, 60);
+            dataGridViewThanhPhos.Name = "dataGridViewThanhPhos";
+            dataGridViewThanhPhos.ReadOnly = true;
+            dataGridViewThanhPhos.RowHeadersWidth = 51;
+            dataGridViewThanhPhos.Size = new Size(1040, 500);
+            dataGridViewThanhPhos.TabIndex = 0;
+            
+            // 
             // btnAddCriteria
             // 
             btnAddCriteria.BackColor = Color.FromArgb(41, 128, 185);
@@ -1507,8 +1594,276 @@
             tabPageDeadlines.UseVisualStyleBackColor = true;
             
             // 
+            // tabControlSystemSettings
+            // 
+            tabControlSystemSettings.Controls.Add(tabPageKhoa);
+            tabControlSystemSettings.Controls.Add(tabPageLop);
+            tabControlSystemSettings.Controls.Add(tabPageTruong);
+            tabControlSystemSettings.Controls.Add(tabPageThanhPho);
+            tabControlSystemSettings.Dock = DockStyle.Fill;
+            tabControlSystemSettings.Font = new Font("Segoe UI", 10F);
+            tabControlSystemSettings.Location = new Point(0, 0);
+            tabControlSystemSettings.Name = "tabControlSystemSettings";
+            tabControlSystemSettings.SelectedIndex = 0;
+            tabControlSystemSettings.Size = new Size(1082, 584);
+            tabControlSystemSettings.TabIndex = 0;
+            
+            // 
+            // tabPageKhoa
+            // 
+            tabPageKhoa.Controls.Add(btnDeleteKhoa);
+            tabPageKhoa.Controls.Add(btnEditKhoa);
+            tabPageKhoa.Controls.Add(btnAddKhoa);
+            tabPageKhoa.Controls.Add(dataGridViewKhoas);
+            tabPageKhoa.Location = new Point(4, 32);
+            tabPageKhoa.Name = "tabPageKhoa";
+            tabPageKhoa.Padding = new Padding(3);
+            tabPageKhoa.Size = new Size(1074, 548);
+            tabPageKhoa.TabIndex = 0;
+            tabPageKhoa.Text = "Quản lý Khoa";
+            tabPageKhoa.UseVisualStyleBackColor = true;
+            
+            // 
+            // btnAddKhoa
+            // 
+            btnAddKhoa.BackColor = Color.FromArgb(41, 128, 185);
+            btnAddKhoa.FlatAppearance.BorderSize = 0;
+            btnAddKhoa.FlatStyle = FlatStyle.Flat;
+            btnAddKhoa.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAddKhoa.ForeColor = Color.White;
+            btnAddKhoa.Location = new Point(20, 20);
+            btnAddKhoa.Name = "btnAddKhoa";
+            btnAddKhoa.Size = new Size(120, 35);
+            btnAddKhoa.TabIndex = 0;
+            btnAddKhoa.Text = "Thêm Khoa";
+            btnAddKhoa.UseVisualStyleBackColor = false;
+            btnAddKhoa.Click += btnAddKhoa_Click;
+            
+            // 
+            // btnEditKhoa
+            // 
+            btnEditKhoa.BackColor = Color.FromArgb(241, 196, 15);
+            btnEditKhoa.FlatAppearance.BorderSize = 0;
+            btnEditKhoa.FlatStyle = FlatStyle.Flat;
+            btnEditKhoa.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnEditKhoa.ForeColor = Color.White;
+            btnEditKhoa.Location = new Point(160, 20);
+            btnEditKhoa.Name = "btnEditKhoa";
+            btnEditKhoa.Size = new Size(120, 35);
+            btnEditKhoa.TabIndex = 1;
+            btnEditKhoa.Text = "Chỉnh sửa";
+            btnEditKhoa.UseVisualStyleBackColor = false;
+            btnEditKhoa.Click += btnEditKhoa_Click;
+            
+            // 
+            // btnDeleteKhoa
+            // 
+            btnDeleteKhoa.BackColor = Color.FromArgb(231, 76, 60);
+            btnDeleteKhoa.FlatAppearance.BorderSize = 0;
+            btnDeleteKhoa.FlatStyle = FlatStyle.Flat;
+            btnDeleteKhoa.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnDeleteKhoa.ForeColor = Color.White;
+            btnDeleteKhoa.Location = new Point(300, 20);
+            btnDeleteKhoa.Name = "btnDeleteKhoa";
+            btnDeleteKhoa.Size = new Size(120, 35);
+            btnDeleteKhoa.TabIndex = 2;
+            btnDeleteKhoa.Text = "Xóa";
+            btnDeleteKhoa.UseVisualStyleBackColor = false;
+            btnDeleteKhoa.Click += btnDeleteKhoa_Click;
+            
+            // 
+            // tabPageLop
+            // 
+            tabPageLop.Controls.Add(btnDeleteLop);
+            tabPageLop.Controls.Add(btnEditLop);
+            tabPageLop.Controls.Add(btnAddLop);
+            tabPageLop.Controls.Add(dataGridViewLops);
+            tabPageLop.Location = new Point(4, 32);
+            tabPageLop.Name = "tabPageLop";
+            tabPageLop.Padding = new Padding(3);
+            tabPageLop.Size = new Size(1074, 548);
+            tabPageLop.TabIndex = 1;
+            tabPageLop.Text = "Quản lý Lớp";
+            tabPageLop.UseVisualStyleBackColor = true;
+            
+            // 
+            // btnAddLop
+            // 
+            btnAddLop.BackColor = Color.FromArgb(41, 128, 185);
+            btnAddLop.FlatAppearance.BorderSize = 0;
+            btnAddLop.FlatStyle = FlatStyle.Flat;
+            btnAddLop.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAddLop.ForeColor = Color.White;
+            btnAddLop.Location = new Point(20, 20);
+            btnAddLop.Name = "btnAddLop";
+            btnAddLop.Size = new Size(120, 35);
+            btnAddLop.TabIndex = 0;
+            btnAddLop.Text = "Thêm Lớp";
+            btnAddLop.UseVisualStyleBackColor = false;
+            btnAddLop.Click += btnAddLop_Click;
+            
+            // 
+            // btnEditLop
+            // 
+            btnEditLop.BackColor = Color.FromArgb(241, 196, 15);
+            btnEditLop.FlatAppearance.BorderSize = 0;
+            btnEditLop.FlatStyle = FlatStyle.Flat;
+            btnEditLop.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnEditLop.ForeColor = Color.White;
+            btnEditLop.Location = new Point(160, 20);
+            btnEditLop.Name = "btnEditLop";
+            btnEditLop.Size = new Size(120, 35);
+            btnEditLop.TabIndex = 1;
+            btnEditLop.Text = "Chỉnh sửa";
+            btnEditLop.UseVisualStyleBackColor = false;
+            btnEditLop.Click += btnEditLop_Click;
+            
+            // 
+            // btnDeleteLop
+            // 
+            btnDeleteLop.BackColor = Color.FromArgb(231, 76, 60);
+            btnDeleteLop.FlatAppearance.BorderSize = 0;
+            btnDeleteLop.FlatStyle = FlatStyle.Flat;
+            btnDeleteLop.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnDeleteLop.ForeColor = Color.White;
+            btnDeleteLop.Location = new Point(300, 20);
+            btnDeleteLop.Name = "btnDeleteLop";
+            btnDeleteLop.Size = new Size(120, 35);
+            btnDeleteLop.TabIndex = 2;
+            btnDeleteLop.Text = "Xóa";
+            btnDeleteLop.UseVisualStyleBackColor = false;
+            btnDeleteLop.Click += btnDeleteLop_Click;
+            
+            // 
+            // tabPageTruong
+            // 
+            tabPageTruong.Controls.Add(btnDeleteTruong);
+            tabPageTruong.Controls.Add(btnEditTruong);
+            tabPageTruong.Controls.Add(btnAddTruong);
+            tabPageTruong.Controls.Add(dataGridViewTruongs);
+            tabPageTruong.Location = new Point(4, 32);
+            tabPageTruong.Name = "tabPageTruong";
+            tabPageTruong.Padding = new Padding(3);
+            tabPageTruong.Size = new Size(1074, 548);
+            tabPageTruong.TabIndex = 2;
+            tabPageTruong.Text = "Quản lý Trường";
+            tabPageTruong.UseVisualStyleBackColor = true;
+            
+            // 
+            // btnAddTruong
+            // 
+            btnAddTruong.BackColor = Color.FromArgb(41, 128, 185);
+            btnAddTruong.FlatAppearance.BorderSize = 0;
+            btnAddTruong.FlatStyle = FlatStyle.Flat;
+            btnAddTruong.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAddTruong.ForeColor = Color.White;
+            btnAddTruong.Location = new Point(20, 20);
+            btnAddTruong.Name = "btnAddTruong";
+            btnAddTruong.Size = new Size(120, 35);
+            btnAddTruong.TabIndex = 0;
+            btnAddTruong.Text = "Thêm Trường";
+            btnAddTruong.UseVisualStyleBackColor = false;
+            btnAddTruong.Click += btnAddTruong_Click;
+            
+            // 
+            // btnEditTruong
+            // 
+            btnEditTruong.BackColor = Color.FromArgb(241, 196, 15);
+            btnEditTruong.FlatAppearance.BorderSize = 0;
+            btnEditTruong.FlatStyle = FlatStyle.Flat;
+            btnEditTruong.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnEditTruong.ForeColor = Color.White;
+            btnEditTruong.Location = new Point(160, 20);
+            btnEditTruong.Name = "btnEditTruong";
+            btnEditTruong.Size = new Size(120, 35);
+            btnEditTruong.TabIndex = 1;
+            btnEditTruong.Text = "Chỉnh sửa";
+            btnEditTruong.UseVisualStyleBackColor = false;
+            btnEditTruong.Click += btnEditTruong_Click;
+            
+            // 
+            // btnDeleteTruong
+            // 
+            btnDeleteTruong.BackColor = Color.FromArgb(231, 76, 60);
+            btnDeleteTruong.FlatAppearance.BorderSize = 0;
+            btnDeleteTruong.FlatStyle = FlatStyle.Flat;
+            btnDeleteTruong.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnDeleteTruong.ForeColor = Color.White;
+            btnDeleteTruong.Location = new Point(300, 20);
+            btnDeleteTruong.Name = "btnDeleteTruong";
+            btnDeleteTruong.Size = new Size(120, 35);
+            btnDeleteTruong.TabIndex = 2;
+            btnDeleteTruong.Text = "Xóa";
+            btnDeleteTruong.UseVisualStyleBackColor = false;
+            btnDeleteTruong.Click += btnDeleteTruong_Click;
+            
+            // 
+            // tabPageThanhPho
+            // 
+            tabPageThanhPho.Controls.Add(btnDeleteThanhPho);
+            tabPageThanhPho.Controls.Add(btnEditThanhPho);
+            tabPageThanhPho.Controls.Add(btnAddThanhPho);
+            tabPageThanhPho.Controls.Add(dataGridViewThanhPhos);
+            tabPageThanhPho.Location = new Point(4, 32);
+            tabPageThanhPho.Name = "tabPageThanhPho";
+            tabPageThanhPho.Padding = new Padding(3);
+            tabPageThanhPho.Size = new Size(1074, 548);
+            tabPageThanhPho.TabIndex = 3;
+            tabPageThanhPho.Text = "Quản lý Thành phố";
+            tabPageThanhPho.UseVisualStyleBackColor = true;
+            
+            // 
+            // btnAddThanhPho
+            // 
+            btnAddThanhPho.BackColor = Color.FromArgb(41, 128, 185);
+            btnAddThanhPho.FlatAppearance.BorderSize = 0;
+            btnAddThanhPho.FlatStyle = FlatStyle.Flat;
+            btnAddThanhPho.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAddThanhPho.ForeColor = Color.White;
+            btnAddThanhPho.Location = new Point(20, 20);
+            btnAddThanhPho.Name = "btnAddThanhPho";
+            btnAddThanhPho.Size = new Size(120, 35);
+            btnAddThanhPho.TabIndex = 0;
+            btnAddThanhPho.Text = "Thêm TP";
+            btnAddThanhPho.UseVisualStyleBackColor = false;
+            btnAddThanhPho.Click += btnAddThanhPho_Click;
+            
+            // 
+            // btnEditThanhPho
+            // 
+            btnEditThanhPho.BackColor = Color.FromArgb(241, 196, 15);
+            btnEditThanhPho.FlatAppearance.BorderSize = 0;
+            btnEditThanhPho.FlatStyle = FlatStyle.Flat;
+            btnEditThanhPho.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnEditThanhPho.ForeColor = Color.White;
+            btnEditThanhPho.Location = new Point(160, 20);
+            btnEditThanhPho.Name = "btnEditThanhPho";
+            btnEditThanhPho.Size = new Size(120, 35);
+            btnEditThanhPho.TabIndex = 1;
+            btnEditThanhPho.Text = "Chỉnh sửa";
+            btnEditThanhPho.UseVisualStyleBackColor = false;
+            btnEditThanhPho.Click += btnEditThanhPho_Click;
+            
+            // 
+            // btnDeleteThanhPho
+            // 
+            btnDeleteThanhPho.BackColor = Color.FromArgb(231, 76, 60);
+            btnDeleteThanhPho.FlatAppearance.BorderSize = 0;
+            btnDeleteThanhPho.FlatStyle = FlatStyle.Flat;
+            btnDeleteThanhPho.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnDeleteThanhPho.ForeColor = Color.White;
+            btnDeleteThanhPho.Location = new Point(300, 20);
+            btnDeleteThanhPho.Name = "btnDeleteThanhPho";
+            btnDeleteThanhPho.Size = new Size(120, 35);
+            btnDeleteThanhPho.TabIndex = 2;
+            btnDeleteThanhPho.Text = "Xóa";
+            btnDeleteThanhPho.UseVisualStyleBackColor = false;
+            btnDeleteThanhPho.Click += btnDeleteThanhPho_Click;
+            
+            // 
             // tabPageSystemSettings
             // 
+            tabPageSystemSettings.Controls.Add(tabControlSystemSettings);
             tabPageSystemSettings.Location = new Point(4, 32);
             tabPageSystemSettings.Name = "tabPageSystemSettings";
             tabPageSystemSettings.Size = new Size(1082, 584);
@@ -1581,6 +1936,16 @@
             ((System.ComponentModel.ISupportInitialize)dataGridViewAcademicYears).EndInit();
             tabPageCriteria.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridViewCriteria).EndInit();
+            tabPageSystemSettings.ResumeLayout(false);
+            tabControlSystemSettings.ResumeLayout(false);
+            tabPageKhoa.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewKhoas).EndInit();
+            tabPageLop.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewLops).EndInit();
+            tabPageTruong.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewTruongs).EndInit();
+            tabPageThanhPho.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewThanhPhos).EndInit();
             ResumeLayout(false);
         }
 
@@ -1700,13 +2065,45 @@
         private TabPage tabPageCriteria;
         private TabPage tabPageDeadlines;
         private TabPage tabPageSystemSettings;
+        
+        // Sub-tabs for System Settings
+        private TabControl tabControlSystemSettings;
+        private TabPage tabPageKhoa;
+        private TabPage tabPageLop;
+        private TabPage tabPageTruong;
+        private TabPage tabPageThanhPho;
+        
         private DataGridView dataGridViewAcademicYears;
         private Button btnAddAcademicYear;
         private Button btnEditAcademicYear;
         private Button btnDeleteAcademicYear;
         private DataGridView dataGridViewCriteria;
+        private DataGridView dataGridViewKhoas;
+        private DataGridView dataGridViewLops;
+        private DataGridView dataGridViewTruongs;
+        private DataGridView dataGridViewThanhPhos;
         private Button btnAddCriteria;
         private Button btnEditCriteria;
         private Button btnDeleteCriteria;
+        
+        // Buttons for Khoa
+        private Button btnAddKhoa;
+        private Button btnEditKhoa;
+        private Button btnDeleteKhoa;
+        
+        // Buttons for Lop
+        private Button btnAddLop;
+        private Button btnEditLop;
+        private Button btnDeleteLop;
+        
+        // Buttons for Truong
+        private Button btnAddTruong;
+        private Button btnEditTruong;
+        private Button btnDeleteTruong;
+        
+        // Buttons for ThanhPho
+        private Button btnAddThanhPho;
+        private Button btnEditThanhPho;
+        private Button btnDeleteThanhPho;
     }
 }

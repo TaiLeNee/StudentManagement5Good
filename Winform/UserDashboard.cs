@@ -50,7 +50,7 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-    
+                
                 await LoadCurrentAcademicYear();
                 await LoadDashboardData();
                 ConfigureUIBasedOnRole();
@@ -723,9 +723,8 @@ namespace StudentManagement5Good.Winform
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
-                var users = await context.Users
-                    .AsNoTracking()
-                    .ToListAsync();
+                // Apply hierarchical filtering based on current user's role
+                var users = await GetUsersBasedOnRole(context);
 
                 dataGridViewUsers.Rows.Clear();
                 foreach (var user in users)
@@ -735,7 +734,7 @@ namespace StudentManagement5Good.Winform
                     row.Cells[0].Value = user.UserId;
                     row.Cells[1].Value = user.HoTen;
                     row.Cells[2].Value = GetRoleDisplayName(user.VaiTro);
-                    row.Cells[3].Value = "Chưa xác định";
+                    row.Cells[3].Value = GetUserDepartment(user);
                     row.Cells[4].Value = user.TrangThai ? "Hoạt động" : "Vô hiệu hóa";
                     row.Tag = user;
                     dataGridViewUsers.Rows.Add(row);
@@ -747,6 +746,69 @@ namespace StudentManagement5Good.Winform
             }
         }
 
+        private async Task<List<User>> GetUsersBasedOnRole(StudentManagementDbContext context)
+        {
+            return _currentUser.VaiTro switch
+            {
+                UserRoles.ADMIN => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.UserId != _currentUser.UserId) // Exclude self
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.DOANTU => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.DOANTP)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.DOANTP => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.DOANTRUONG && u.MaTP == _currentUser.MaTP)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.DOANTRUONG => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.DOANKHOA && u.MaTruong == _currentUser.MaTruong)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.DOANKHOA => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.CVHT && u.MaKhoa == _currentUser.MaKhoa)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.GIAOVU => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.SINHVIEN && u.MaTruong == _currentUser.MaTruong)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                UserRoles.CVHT => await context.Users
+                    .AsNoTracking()
+                    .Where(u => u.VaiTro == UserRoles.SINHVIEN && u.MaLop == _currentUser.MaLop)
+                    .OrderBy(u => u.HoTen)
+                    .ToListAsync(),
+
+                _ => new List<User>() // No access for other roles
+            };
+        }
+
+        private string GetUserDepartment(User user)
+        {
+            if (!string.IsNullOrEmpty(user.MaLop))
+                return $"Lớp: {user.MaLop}";
+            if (!string.IsNullOrEmpty(user.MaKhoa))
+                return $"Khoa: {user.MaKhoa}";
+            if (!string.IsNullOrEmpty(user.MaTruong))
+                return $"Trường: {user.MaTruong}";
+            if (!string.IsNullOrEmpty(user.MaTP))
+                return $"TP: {user.MaTP}";
+            return "Chưa xác định";
+        }
+
         private void dataGridViewUsers_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex == dataGridViewUsers.Columns["colUserActions"].Index)
@@ -755,6 +817,14 @@ namespace StudentManagement5Good.Winform
                 var user = selectedRow.Tag as User;
                 if (user != null)
                 {
+                    // Check if current user has permission to edit this user
+                    if (!CanEditUser(user))
+                    {
+                        MessageBox.Show("Bạn không có quyền chỉnh sửa người dùng này!", "Từ chối truy cập", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
                     // Open user edit form
                     using var scope = _serviceProvider.CreateScope();
                     var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
@@ -767,8 +837,93 @@ namespace StudentManagement5Good.Winform
             }
         }
 
+        private bool CanEditUser(User targetUser)
+        {
+            return _currentUser.VaiTro switch
+            {
+                UserRoles.ADMIN => true, // Admin can edit everyone except themselves
+                UserRoles.DOANTU => targetUser.VaiTro == UserRoles.DOANTP,
+                UserRoles.DOANTP => targetUser.VaiTro == UserRoles.DOANTRUONG && targetUser.MaTP == _currentUser.MaTP,
+                UserRoles.DOANTRUONG => targetUser.VaiTro == UserRoles.DOANKHOA && targetUser.MaTruong == _currentUser.MaTruong,
+                UserRoles.DOANKHOA => targetUser.VaiTro == UserRoles.CVHT && targetUser.MaKhoa == _currentUser.MaKhoa,
+                UserRoles.GIAOVU => targetUser.VaiTro == UserRoles.SINHVIEN && targetUser.MaTruong == _currentUser.MaTruong,
+                UserRoles.CVHT => targetUser.VaiTro == UserRoles.SINHVIEN && targetUser.MaLop == _currentUser.MaLop,
+                _ => false
+            };
+        }
+
+        private bool CanDeleteUser(User targetUser)
+        {
+            // Same logic as CanEditUser for now, but can be customized
+            return CanEditUser(targetUser);
+        }
+
+        private async void btnDeleteUser_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewUsers.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn người dùng cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedRow = dataGridViewUsers.SelectedRows[0];
+            var user = selectedRow.Tag as User;
+            
+            if (user == null) return;
+
+            // Check permission
+            if (!CanDeleteUser(user))
+            {
+                MessageBox.Show("Bạn không có quyền xóa người dùng này!", "Từ chối truy cập", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa người dùng '{user.HoTen}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.Users.FindAsync(user.UserId);
+                    if (toDelete != null)
+                    {
+                        context.Users.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        MessageBox.Show("Xóa người dùng thành công!", "Thành công", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+                        LoadUserManagementData();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa người dùng: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
         private void btnAddUser_Click(object sender, EventArgs e)
         {
+            // Check if current user can create users
+            if (!CanCreateUsers())
+            {
+                MessageBox.Show("Bạn không có quyền tạo người dùng mới!", "Từ chối truy cập", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
             var form = new UserManagementForm(context, _currentUser);
@@ -778,6 +933,21 @@ namespace StudentManagement5Good.Winform
                 MessageBox.Show("Thêm người dùng mới thành công!", "Thành công", 
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private bool CanCreateUsers()
+        {
+            return _currentUser.VaiTro switch
+            {
+                UserRoles.ADMIN => true,
+                UserRoles.DOANTU => true,
+                UserRoles.DOANTP => true,
+                UserRoles.DOANTRUONG => true,
+                UserRoles.DOANKHOA => true,
+                UserRoles.GIAOVU => true,
+                UserRoles.CVHT => true,
+                _ => false
+            };
         }
 
         private void btnImportStudents_Click(object sender, EventArgs e)
@@ -870,6 +1040,10 @@ namespace StudentManagement5Good.Winform
         {
             await LoadAcademicYears();
             await LoadCriteriaConfig();
+            await LoadKhoasConfig();
+            await LoadLopsConfig();
+            await LoadTruongsConfig();
+            await LoadThanhPhosConfig();
         }
 
         private async Task LoadAcademicYears()
@@ -907,6 +1081,89 @@ namespace StudentManagement5Good.Winform
             catch (Exception ex)
             {
                 MessageBox.Show($"Lỗi tải tiêu chí: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadKhoasConfig()
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                var khoas = await context.Khoas
+                    .AsNoTracking()
+                    .Include(k => k.Truong)
+                    .OrderBy(k => k.TenKhoa)
+                    .ToListAsync();
+
+                dataGridViewKhoas.DataSource = khoas;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách khoa: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadLopsConfig()
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                var lops = await context.Lops
+                    .AsNoTracking()
+                    .Include(l => l.Khoa)
+                    .OrderBy(l => l.TenLop)
+                    .ToListAsync();
+
+                dataGridViewLops.DataSource = lops;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách lớp: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadTruongsConfig()
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                var truongs = await context.Truongs
+                    .AsNoTracking()
+                    .Include(t => t.ThanhPho)
+                    .OrderBy(t => t.TenTruong)
+                    .ToListAsync();
+
+                dataGridViewTruongs.DataSource = truongs;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách trường: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadThanhPhosConfig()
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                var thanhPhos = await context.ThanhPhos
+                    .AsNoTracking()
+                    .OrderBy(tp => tp.TenThanhPho)
+                    .ToListAsync();
+
+                dataGridViewThanhPhos.DataSource = thanhPhos;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách thành phố: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1002,20 +1259,423 @@ namespace StudentManagement5Good.Winform
 
         private void btnAddCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Chức năng thêm tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
+            var form = new TieuChiForm(_serviceProvider);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadCriteriaConfig();
+                MessageBox.Show("Thêm tiêu chí thành công!", "Thành công", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         private void btnEditCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Chức năng chỉnh sửa tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
+            if (dataGridViewCriteria.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tiêu chí cần chỉnh sửa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewCriteria.SelectedRows[0];
+            var tieuChi = selectedRow.DataBoundItem as TieuChi;
+            
+            if (tieuChi != null)
+            {
+                var form = new TieuChiForm(_serviceProvider, tieuChi);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadCriteriaConfig();
+                    MessageBox.Show("Cập nhật tiêu chí thành công!", "Thành công", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
         }
 
-        private void btnDeleteCriteria_Click(object sender, EventArgs e)
+        private async void btnDeleteCriteria_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Chức năng xóa tiêu chí đã bị vô hiệu hóa.", "Thông báo", 
+            if (dataGridViewCriteria.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn tiêu chí cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewCriteria.SelectedRows[0];
+            var tieuChi = selectedRow.DataBoundItem as TieuChi;
+            
+            if (tieuChi == null) return;
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa tiêu chí '{tieuChi.TenTieuChi}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.TieuChis.FindAsync(tieuChi.MaTC);
+                    if (toDelete != null)
+                    {
+                        context.TieuChis.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        LoadCriteriaConfig();
+                        MessageBox.Show("Xóa tiêu chí thành công!", "Thành công", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa tiêu chí: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // CRUD Methods for Khoa
+        private void btnAddKhoa_Click(object sender, EventArgs e)
+        {
+            var form = new KhoaForm(_serviceProvider);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadKhoasConfig();
+                MessageBox.Show("Thêm khoa thành công!", "Thành công", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnEditKhoa_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewKhoas.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn khoa cần chỉnh sửa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewKhoas.SelectedRows[0];
+            var khoa = selectedRow.DataBoundItem as Khoa;
+            
+            if (khoa != null)
+            {
+                var form = new KhoaForm(_serviceProvider, khoa);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadKhoasConfig();
+                    MessageBox.Show("Cập nhật khoa thành công!", "Thành công", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private async void btnDeleteKhoa_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewKhoas.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn khoa cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewKhoas.SelectedRows[0];
+            var khoa = selectedRow.DataBoundItem as Khoa;
+            
+            if (khoa == null) return;
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa khoa '{khoa.TenKhoa}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.Khoas.FindAsync(khoa.MaKhoa);
+                    if (toDelete != null)
+                    {
+                        context.Khoas.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        LoadKhoasConfig();
+                        MessageBox.Show("Xóa khoa thành công!", "Thành công", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa khoa: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // CRUD Methods for Lop
+        private void btnAddLop_Click(object sender, EventArgs e)
+        {
+            var form = new LopForm(_serviceProvider);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadLopsConfig();
+                MessageBox.Show("Thêm lớp thành công!", "Thành công", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnEditLop_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewLops.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn lớp cần chỉnh sửa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewLops.SelectedRows[0];
+            var lop = selectedRow.DataBoundItem as Lop;
+            
+            if (lop != null)
+            {
+                var form = new LopForm(_serviceProvider, lop);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadLopsConfig();
+                    MessageBox.Show("Cập nhật lớp thành công!", "Thành công", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private async void btnDeleteLop_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewLops.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn lớp cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewLops.SelectedRows[0];
+            var lop = selectedRow.DataBoundItem as Lop;
+            
+            if (lop == null) return;
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa lớp '{lop.TenLop}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.Lops.FindAsync(lop.MaLop);
+                    if (toDelete != null)
+                    {
+                        context.Lops.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        LoadLopsConfig();
+                        MessageBox.Show("Xóa lớp thành công!", "Thành công", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa lớp: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // CRUD Methods for Truong
+        private void btnAddTruong_Click(object sender, EventArgs e)
+        {
+            var form = new TruongForm(_serviceProvider);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadTruongsConfig();
+                MessageBox.Show("Thêm trường thành công!", "Thành công", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnEditTruong_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewTruongs.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn trường cần chỉnh sửa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewTruongs.SelectedRows[0];
+            var truong = selectedRow.DataBoundItem as Truong;
+            
+            if (truong != null)
+            {
+                var form = new TruongForm(_serviceProvider, truong);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadTruongsConfig();
+                    MessageBox.Show("Cập nhật trường thành công!", "Thành công", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private async void btnDeleteTruong_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewTruongs.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn trường cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewTruongs.SelectedRows[0];
+            var truong = selectedRow.DataBoundItem as Truong;
+            
+            if (truong == null) return;
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa trường '{truong.TenTruong}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.Truongs.FindAsync(truong.MaTruong);
+                    if (toDelete != null)
+                    {
+                        context.Truongs.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        LoadTruongsConfig();
+                        MessageBox.Show("Xóa trường thành công!", "Thành công", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa trường: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // CRUD Methods for ThanhPho
+        private void btnAddThanhPho_Click(object sender, EventArgs e)
+        {
+            var form = new ThanhPhoForm(_serviceProvider);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadThanhPhosConfig();
+                MessageBox.Show("Thêm thành phố thành công!", "Thành công", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnEditThanhPho_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewThanhPhos.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn thành phố cần chỉnh sửa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewThanhPhos.SelectedRows[0];
+            var thanhPho = selectedRow.DataBoundItem as ThanhPho;
+            
+            if (thanhPho != null)
+            {
+                var form = new ThanhPhoForm(_serviceProvider, thanhPho);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    LoadThanhPhosConfig();
+                    MessageBox.Show("Cập nhật thành phố thành công!", "Thành công", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private async void btnDeleteThanhPho_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewThanhPhos.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn thành phố cần xóa!", "Cảnh báo", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var selectedRow = dataGridViewThanhPhos.SelectedRows[0];
+            var thanhPho = selectedRow.DataBoundItem as ThanhPho;
+            
+            if (thanhPho == null) return;
+
+            var result = MessageBox.Show(
+                $"Bạn có chắc chắn muốn xóa thành phố '{thanhPho.TenThanhPho}'?\n\n" +
+                "Lưu ý: Điều này có thể ảnh hưởng đến dữ liệu liên quan.",
+                "Xác nhận xóa",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                    var toDelete = await context.ThanhPhos.FindAsync(thanhPho.MaTP);
+                    if (toDelete != null)
+                    {
+                        context.ThanhPhos.Remove(toDelete);
+                        await context.SaveChangesAsync();
+                        
+                        LoadThanhPhosConfig();
+                        MessageBox.Show("Xóa thành phố thành công!", "Thành công", 
+                                      MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa thành phố: {ex.Message}", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // TieuChiYeuCau Configuration
+        private void btnConfigTieuChiYeuCau_Click(object sender, EventArgs e)
+        {
+            var form = new TieuChiYeuCauForm(_serviceProvider);
+            form.ShowDialog();
         }
 
         #endregion

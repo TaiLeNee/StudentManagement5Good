@@ -66,7 +66,7 @@ namespace StudentManagement5Good.Winform
         {
             comboBoxRole.Items.Clear();
             
-            // Define which roles can be created by each role
+            // Define which roles can be created by each role based on hierarchy
             switch (_currentUser.VaiTro)
             {
                 case UserRoles.ADMIN:
@@ -78,8 +78,19 @@ namespace StudentManagement5Good.Winform
                         UserRoles.DOANKHOA,
                         UserRoles.CVHT,
                         UserRoles.DOANTP,
-                        UserRoles.DOANTU
+                        UserRoles.DOANTU,
+                        UserRoles.SINHVIEN
                     });
+                    break;
+                    
+                case UserRoles.DOANTU:
+                    // Đoàn TU can manage Đoàn TP
+                    comboBoxRole.Items.Add(UserRoles.DOANTP);
+                    break;
+                    
+                case UserRoles.DOANTP:
+                    // Đoàn TP can manage Đoàn Trường
+                    comboBoxRole.Items.Add(UserRoles.DOANTRUONG);
                     break;
                     
                 case UserRoles.DOANTRUONG:
@@ -92,14 +103,14 @@ namespace StudentManagement5Good.Winform
                     comboBoxRole.Items.Add(UserRoles.CVHT);
                     break;
                     
-                case UserRoles.DOANTP:
-                    // Đoàn TP can manage Đoàn Trường
-                    comboBoxRole.Items.Add(UserRoles.DOANTRUONG);
+                case UserRoles.GIAOVU:
+                    // Giáo vụ can create students
+                    comboBoxRole.Items.Add(UserRoles.SINHVIEN);
                     break;
                     
-                case UserRoles.DOANTU:
-                    // Đoàn TU can manage Đoàn TP
-                    comboBoxRole.Items.Add(UserRoles.DOANTP);
+                case UserRoles.CVHT:
+                    // CVHT can create students for their class
+                    comboBoxRole.Items.Add(UserRoles.SINHVIEN);
                     break;
                     
                 default:
@@ -110,6 +121,138 @@ namespace StudentManagement5Good.Winform
             
             if (comboBoxRole.Items.Count > 0)
                 comboBoxRole.SelectedIndex = 0;
+                
+            // Add event handler for role change
+            comboBoxRole.SelectedIndexChanged += ComboBoxRole_SelectedIndexChanged;
+        }
+
+        private void ComboBoxRole_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Show/hide additional controls based on selected role
+            var selectedRole = comboBoxRole.SelectedItem?.ToString();
+            
+            // Hide all additional controls first
+            lblThanhPho.Visible = false;
+            cmbThanhPho.Visible = false;
+            lblTruong.Visible = false;
+            cmbTruong.Visible = false;
+            lblKhoa.Visible = false;
+            cmbKhoa.Visible = false;
+            lblLop.Visible = false;
+            cmbLop.Visible = false;
+            
+            // Show relevant controls based on role
+            switch (selectedRole)
+            {
+                case UserRoles.DOANTP:
+                    lblThanhPho.Visible = true;
+                    cmbThanhPho.Visible = true;
+                    LoadThanhPhos();
+                    break;
+                    
+                case UserRoles.DOANTRUONG:
+                    lblTruong.Visible = true;
+                    cmbTruong.Visible = true;
+                    LoadTruongs();
+                    break;
+                    
+                case UserRoles.DOANKHOA:
+                    lblKhoa.Visible = true;
+                    cmbKhoa.Visible = true;
+                    LoadKhoas();
+                    break;
+                    
+                case UserRoles.CVHT:
+                    lblLop.Visible = true;
+                    cmbLop.Visible = true;
+                    LoadLops();
+                    break;
+                    
+                case UserRoles.SINHVIEN:
+                    lblLop.Visible = true;
+                    cmbLop.Visible = true;
+                    LoadLops();
+                    break;
+            }
+        }
+
+        private async void LoadThanhPhos()
+        {
+            try
+            {
+                var thanhPhos = await _context.ThanhPhos
+                    .AsNoTracking()
+                    .Where(tp => tp.TrangThai == true)
+                    .OrderBy(tp => tp.TenThanhPho)
+                    .ToListAsync();
+
+                cmbThanhPho.Items.Clear();
+                cmbThanhPho.Items.AddRange(thanhPhos.Select(tp => tp.TenThanhPho).ToArray());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách thành phố: {ex.Message}", "Lỗi", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void LoadTruongs()
+        {
+            try
+            {
+                var truongs = await _context.Truongs
+                    .AsNoTracking()
+                    .Where(t => t.TrangThai == true)
+                    .OrderBy(t => t.TenTruong)
+                    .ToListAsync();
+
+                cmbTruong.Items.Clear();
+                cmbTruong.Items.AddRange(truongs.Select(t => t.TenTruong).ToArray());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách trường: {ex.Message}", "Lỗi", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void LoadKhoas()
+        {
+            try
+            {
+                var khoas = await _context.Khoas
+                    .AsNoTracking()
+                    .Where(k => k.TrangThai == true)
+                    .OrderBy(k => k.TenKhoa)
+                    .ToListAsync();
+
+                cmbKhoa.Items.Clear();
+                cmbKhoa.Items.AddRange(khoas.Select(k => k.TenKhoa).ToArray());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách khoa: {ex.Message}", "Lỗi", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void LoadLops()
+        {
+            try
+            {
+                var lops = await _context.Lops
+                    .AsNoTracking()
+                    .OrderBy(l => l.TenLop)
+                    .ToListAsync();
+
+                cmbLop.Items.Clear();
+                cmbLop.Items.AddRange(lops.Select(l => l.TenLop).ToArray());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải danh sách lớp: {ex.Message}", "Lỗi", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void LoadClasses()
@@ -122,8 +265,6 @@ namespace StudentManagement5Good.Winform
             {
                 comboBoxClass.Items.Add($"{lop.MaLop} - {lop.TenLop}");
             }
-            
-            comboBoxClass.SelectedIndex = 0;
         }
 
         private void LoadData()
@@ -247,11 +388,40 @@ namespace StudentManagement5Good.Winform
                 btnSave.Enabled = false;
                 btnCancel.Enabled = false;
                 
+                // Get selected values for organizational units
                 string? selectedClass = null;
+                string? selectedKhoa = null;
+                string? selectedTruong = null;
+                string? selectedThanhPho = null;
+                
                 if (comboBoxClass.SelectedIndex > 0)
                 {
                     var classText = comboBoxClass.SelectedItem?.ToString() ?? "";
                     selectedClass = classText.Split('-')[0].Trim();
+                }
+                
+                if (cmbLop.SelectedIndex >= 0 && !string.IsNullOrEmpty(cmbLop.SelectedItem?.ToString()))
+                {
+                    var lop = await _context.Lops.FirstOrDefaultAsync(l => l.TenLop == cmbLop.SelectedItem.ToString());
+                    selectedClass = lop?.MaLop;
+                }
+                
+                if (cmbKhoa.SelectedIndex >= 0 && !string.IsNullOrEmpty(cmbKhoa.SelectedItem?.ToString()))
+                {
+                    var khoa = await _context.Khoas.FirstOrDefaultAsync(k => k.TenKhoa == cmbKhoa.SelectedItem.ToString());
+                    selectedKhoa = khoa?.MaKhoa;
+                }
+                
+                if (cmbTruong.SelectedIndex >= 0 && !string.IsNullOrEmpty(cmbTruong.SelectedItem?.ToString()))
+                {
+                    var truong = await _context.Truongs.FirstOrDefaultAsync(t => t.TenTruong == cmbTruong.SelectedItem.ToString());
+                    selectedTruong = truong?.MaTruong;
+                }
+                
+                if (cmbThanhPho.SelectedIndex >= 0 && !string.IsNullOrEmpty(cmbThanhPho.SelectedItem?.ToString()))
+                {
+                    var thanhPho = await _context.ThanhPhos.FirstOrDefaultAsync(tp => tp.TenThanhPho == cmbThanhPho.SelectedItem.ToString());
+                    selectedThanhPho = thanhPho?.MaTP;
                 }
                 
                 if (_isEditMode && _user != null)
@@ -262,6 +432,9 @@ namespace StudentManagement5Good.Winform
                     _user.SoDienThoai = txtPhone.Text.Trim();
                     _user.VaiTro = comboBoxRole.SelectedItem?.ToString();
                     _user.MaLop = selectedClass;
+                    _user.MaKhoa = selectedKhoa;
+                    _user.MaTruong = selectedTruong;
+                    _user.MaTP = selectedThanhPho;
                     _user.TrangThai = checkBoxActive.Checked;
                     
                     // Update password only if provided
@@ -285,6 +458,9 @@ namespace StudentManagement5Good.Winform
                         SoDienThoai = txtPhone.Text.Trim(),
                         VaiTro = comboBoxRole.SelectedItem?.ToString(),
                         MaLop = selectedClass,
+                        MaKhoa = selectedKhoa,
+                        MaTruong = selectedTruong,
+                        MaTP = selectedThanhPho,
                         TrangThai = checkBoxActive.Checked,
                         NgayTao = DateTime.Now
                     };

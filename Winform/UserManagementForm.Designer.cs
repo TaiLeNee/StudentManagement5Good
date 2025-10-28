@@ -37,6 +37,14 @@ namespace StudentManagement5Good.Winform
             comboBoxRole = new ComboBox();
             lblClass = new Label();
             comboBoxClass = new ComboBox();
+            lblThanhPho = new Label();
+            cmbThanhPho = new ComboBox();
+            lblTruong = new Label();
+            cmbTruong = new ComboBox();
+            lblKhoa = new Label();
+            cmbKhoa = new ComboBox();
+            lblLop = new Label();
+            cmbLop = new ComboBox();
             checkBoxActive = new CheckBox();
             
             panelBottom = new Panel();
@@ -63,7 +71,8 @@ namespace StudentManagement5Good.Winform
             // panelMain
             panelMain.BackColor = Color.White;
             panelMain.Controls.AddRange(new Control[] {
-                checkBoxActive, comboBoxClass, lblClass, comboBoxRole, lblRole,
+                checkBoxActive, cmbLop, lblLop, cmbKhoa, lblKhoa, cmbTruong, lblTruong,
+                cmbThanhPho, lblThanhPho, comboBoxClass, lblClass, comboBoxRole, lblRole,
                 txtPhone, lblPhone, txtEmail, lblEmail, txtHoTen, lblHoTen,
                 txtPassword, lblPassword, txtUsername, lblUsername, txtUserId, lblUserId
             });
@@ -131,6 +140,46 @@ namespace StudentManagement5Good.Winform
             comboBoxClass.Location = new Point(200, yPos - 3);
             comboBoxClass.Size = new Size(450, 30);
             comboBoxClass.DropDownStyle = ComboBoxStyle.DropDownList;
+            
+            yPos += yStep;
+            lblThanhPho.Text = "Thành phố:";
+            lblThanhPho.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblThanhPho.Location = new Point(30, yPos);
+            lblThanhPho.Visible = false;
+            cmbThanhPho.Location = new Point(200, yPos - 3);
+            cmbThanhPho.Size = new Size(450, 30);
+            cmbThanhPho.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbThanhPho.Visible = false;
+            
+            yPos += yStep;
+            lblTruong.Text = "Trường:";
+            lblTruong.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblTruong.Location = new Point(30, yPos);
+            lblTruong.Visible = false;
+            cmbTruong.Location = new Point(200, yPos - 3);
+            cmbTruong.Size = new Size(450, 30);
+            cmbTruong.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbTruong.Visible = false;
+            
+            yPos += yStep;
+            lblKhoa.Text = "Khoa:";
+            lblKhoa.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblKhoa.Location = new Point(30, yPos);
+            lblKhoa.Visible = false;
+            cmbKhoa.Location = new Point(200, yPos - 3);
+            cmbKhoa.Size = new Size(450, 30);
+            cmbKhoa.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbKhoa.Visible = false;
+            
+            yPos += yStep;
+            lblLop.Text = "Lớp:";
+            lblLop.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblLop.Location = new Point(30, yPos);
+            lblLop.Visible = false;
+            cmbLop.Location = new Point(200, yPos - 3);
+            cmbLop.Size = new Size(450, 30);
+            cmbLop.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLop.Visible = false;
             
             yPos += yStep;
             checkBoxActive.Text = "Kích hoạt tài khoản";
@@ -203,6 +252,14 @@ namespace StudentManagement5Good.Winform
         private ComboBox comboBoxRole;
         private Label lblClass;
         private ComboBox comboBoxClass;
+        private Label lblThanhPho;
+        private ComboBox cmbThanhPho;
+        private Label lblTruong;
+        private ComboBox cmbTruong;
+        private Label lblKhoa;
+        private ComboBox cmbKhoa;
+        private Label lblLop;
+        private ComboBox cmbLop;
         private CheckBox checkBoxActive;
         private Panel panelBottom;
         private Button btnSave;

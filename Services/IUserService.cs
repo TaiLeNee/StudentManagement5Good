@@ -29,6 +29,14 @@ namespace StudentManagement5GoodTempp.Services
         Task<List<User>> GetUsersForApprovalLevelAsync(string capXet, string? maKhoa = null);
         Task<bool> UpdateLastLoginAsync(string userId);
         
+        // Hierarchical permission methods
+        Task<List<User>> GetUsersManagedByAsync(string managerUserId);
+        Task<bool> CanCreateUserWithRoleAsync(string managerUserId, string targetRole);
+        Task<bool> CanEditUserAsync(string managerUserId, string targetUserId);
+        Task<bool> CanDeleteUserAsync(string managerUserId, string targetUserId);
+        Task<List<string>> GetAvailableRolesForCreationAsync(string managerUserId);
+        Task<bool> ValidateUserHierarchyAsync(string managerUserId, User targetUser);
+        
         // Utility methods
         string HashPassword(string password);
         bool VerifyPassword(string password, string hashedPassword);

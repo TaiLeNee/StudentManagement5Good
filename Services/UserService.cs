@@ -514,6 +514,189 @@ namespace StudentManagement5GoodTempp.Services
             }
         }
 
+        #region Hierarchical Permission Methods
+
+        public async Task<List<User>> GetUsersManagedByAsync(string managerUserId)
+        {
+            try
+            {
+                var manager = await _context.Users.FindAsync(managerUserId);
+                if (manager == null) return new List<User>();
+
+                return manager.VaiTro switch
+                {
+                    UserRoles.ADMIN => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.UserId != managerUserId) // Exclude self
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.DOANTU => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.DOANTP)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.DOANTP => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.DOANTRUONG && u.MaTP == manager.MaTP)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.DOANTRUONG => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.DOANKHOA && u.MaTruong == manager.MaTruong)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.DOANKHOA => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.CVHT && u.MaKhoa == manager.MaKhoa)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.GIAOVU => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.SINHVIEN && u.MaTruong == manager.MaTruong)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    UserRoles.CVHT => await _context.Users
+                        .AsNoTracking()
+                        .Where(u => u.VaiTro == UserRoles.SINHVIEN && u.MaLop == manager.MaLop)
+                        .OrderBy(u => u.HoTen)
+                        .ToListAsync(),
+
+                    _ => new List<User>() // No access for other roles
+                };
+            }
+            catch (Exception)
+            {
+                return new List<User>();
+            }
+        }
+
+        public async Task<bool> CanCreateUserWithRoleAsync(string managerUserId, string targetRole)
+        {
+            try
+            {
+                var manager = await _context.Users.FindAsync(managerUserId);
+                if (manager == null) return false;
+
+                return manager.VaiTro switch
+                {
+                    UserRoles.ADMIN => targetRole != UserRoles.ADMIN, // Admin can create all except Admin
+                    UserRoles.DOANTU => targetRole == UserRoles.DOANTP,
+                    UserRoles.DOANTP => targetRole == UserRoles.DOANTRUONG,
+                    UserRoles.DOANTRUONG => targetRole == UserRoles.DOANKHOA,
+                    UserRoles.DOANKHOA => targetRole == UserRoles.CVHT,
+                    UserRoles.GIAOVU => targetRole == UserRoles.SINHVIEN,
+                    UserRoles.CVHT => targetRole == UserRoles.SINHVIEN,
+                    _ => false
+                };
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> CanEditUserAsync(string managerUserId, string targetUserId)
+        {
+            try
+            {
+                var manager = await _context.Users.FindAsync(managerUserId);
+                var targetUser = await _context.Users.FindAsync(targetUserId);
+                
+                if (manager == null || targetUser == null) return false;
+
+                return manager.VaiTro switch
+                {
+                    UserRoles.ADMIN => targetUserId != managerUserId, // Admin can edit everyone except themselves
+                    UserRoles.DOANTU => targetUser.VaiTro == UserRoles.DOANTP,
+                    UserRoles.DOANTP => targetUser.VaiTro == UserRoles.DOANTRUONG && targetUser.MaTP == manager.MaTP,
+                    UserRoles.DOANTRUONG => targetUser.VaiTro == UserRoles.DOANKHOA && targetUser.MaTruong == manager.MaTruong,
+                    UserRoles.DOANKHOA => targetUser.VaiTro == UserRoles.CVHT && targetUser.MaKhoa == manager.MaKhoa,
+                    UserRoles.GIAOVU => targetUser.VaiTro == UserRoles.SINHVIEN && targetUser.MaTruong == manager.MaTruong,
+                    UserRoles.CVHT => targetUser.VaiTro == UserRoles.SINHVIEN && targetUser.MaLop == manager.MaLop,
+                    _ => false
+                };
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> CanDeleteUserAsync(string managerUserId, string targetUserId)
+        {
+            // Same logic as CanEditUser for now, but can be customized
+            return await CanEditUserAsync(managerUserId, targetUserId);
+        }
+
+        public async Task<List<string>> GetAvailableRolesForCreationAsync(string managerUserId)
+        {
+            try
+            {
+                var manager = await _context.Users.FindAsync(managerUserId);
+                if (manager == null) return new List<string>();
+
+                return manager.VaiTro switch
+                {
+                    UserRoles.ADMIN => new List<string>
+                    {
+                        UserRoles.GIAOVU,
+                        UserRoles.DOANTRUONG,
+                        UserRoles.DOANKHOA,
+                        UserRoles.CVHT,
+                        UserRoles.DOANTP,
+                        UserRoles.DOANTU,
+                        UserRoles.SINHVIEN
+                    },
+                    UserRoles.DOANTU => new List<string> { UserRoles.DOANTP },
+                    UserRoles.DOANTP => new List<string> { UserRoles.DOANTRUONG },
+                    UserRoles.DOANTRUONG => new List<string> { UserRoles.DOANKHOA },
+                    UserRoles.DOANKHOA => new List<string> { UserRoles.CVHT },
+                    UserRoles.GIAOVU => new List<string> { UserRoles.SINHVIEN },
+                    UserRoles.CVHT => new List<string> { UserRoles.SINHVIEN },
+                    _ => new List<string>()
+                };
+            }
+            catch (Exception)
+            {
+                return new List<string>();
+            }
+        }
+
+        public async Task<bool> ValidateUserHierarchyAsync(string managerUserId, User targetUser)
+        {
+            try
+            {
+                var manager = await _context.Users.FindAsync(managerUserId);
+                if (manager == null || targetUser == null) return false;
+
+                // Check if manager can create/edit user with this role
+                if (!await CanCreateUserWithRoleAsync(managerUserId, targetUser.VaiTro))
+                    return false;
+
+                // Additional validation based on organizational hierarchy
+                return manager.VaiTro switch
+                {
+                    UserRoles.DOANTP => targetUser.MaTP == manager.MaTP,
+                    UserRoles.DOANTRUONG => targetUser.MaTruong == manager.MaTruong,
+                    UserRoles.DOANKHOA => targetUser.MaKhoa == manager.MaKhoa,
+                    UserRoles.CVHT => targetUser.MaLop == manager.MaLop,
+                    _ => true // Admin and others don't need additional validation
+                };
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
         #endregion
     }
 }
