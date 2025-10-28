@@ -8,10 +8,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.DataAccess.Entity;
 using StudentManagement5GoodTempp.Services;
 using StudentManagement5Good.Winform;
+
+// Helper class for evidence summary
+public class EvidenceSummary
+{
+    public string MaTC { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public StudentManagement5GoodTempp.DataAccess.Entity.TieuChi TieuChi { get; set; } = null!;
+}
+
 namespace StudentManagement5Good.Winform
 {
     /// <summary>
@@ -19,17 +29,17 @@ namespace StudentManagement5Good.Winform
     /// </summary>
     public partial class StudentDashboard : Form
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IUserService _userService;
         private readonly IStudentService _studentService;
         private readonly User _currentUser;
         private SinhVien? _currentStudent;
         private string _currentNamHoc = "";
 
-        public StudentDashboard(StudentManagementDbContext context, IUserService userService, 
+        public StudentDashboard(IServiceProvider serviceProvider, IUserService userService, 
                                IStudentService studentService, User currentUser)
         {
-            _context = context;
+            _serviceProvider = serviceProvider;
             _userService = userService;
             _studentService = studentService;
             _currentUser = currentUser;
@@ -38,12 +48,27 @@ namespace StudentManagement5Good.Winform
             InitializeStudentInterface();
         }
 
+        // Constructor cũ để backward compatibility
+        public StudentDashboard(StudentManagementDbContext context, IUserService userService, 
+                               IStudentService studentService, User currentUser)
+            : this(StudentManagement5GoodTempp.Program.ServiceProvider, userService, studentService, currentUser)
+        {
+        }
+
         private async void StudentDashboard_Load(object sender, EventArgs e)
         {
             try
             {
+                // Show loading indicator
+                this.Cursor = Cursors.WaitCursor;
+                lblOverallStatus.Text = "Đang tải dữ liệu...";
+                
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 // Load current academic year from database
-                var currentYear = await _context.NamHocs
+                var currentYear = await context.NamHocs
+                    .AsNoTracking()
                     .OrderByDescending(nh => nh.TuNgay)
                     .FirstOrDefaultAsync();
                 
@@ -52,15 +77,50 @@ namespace StudentManagement5Good.Winform
                     _currentNamHoc = currentYear.MaNH;
                     lblCurrentYear.Text = $"Năm học {currentYear.TenNamHoc}";
                 }
+                else
+                {
+                    // Nếu không có năm học nào, sử dụng mặc định
+                    _currentNamHoc = DateTime.Now.Year.ToString();
+                    lblCurrentYear.Text = $"Năm học {_currentNamHoc}";
+                }
                 
-                await LoadStudentData();
-                await LoadDashboardData();
-                await LoadMinhChungData();
+                // Load data step by step với error handling riêng
+                await SafeExecuteAsync(async () => await LoadStudentData(), "Lỗi tải thông tin sinh viên");
+                await SafeExecuteAsync(async () => await LoadDashboardData(), "Lỗi tải dữ liệu đánh giá");
+                await SafeExecuteAsync(async () => await LoadMinhChungData(), "Lỗi tải dữ liệu minh chứng");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}", 
+                MessageBox.Show($"Lỗi tải dữ liệu dashboard: {ex.Message}", 
                               "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
+                // Set default status in case of general error
+                lblOverallStatus.Text = "Lỗi tải dữ liệu";
+                lblOverallStatus.ForeColor = Color.FromArgb(231, 76, 60);
+            }
+            finally
+            {
+                // Hide loading indicator
+                this.Cursor = Cursors.Default;
+            }
+        }
+
+        /// <summary>
+        /// Helper method để thực thi async operations với error handling
+        /// </summary>
+        private async Task SafeExecuteAsync(Func<Task> action, string errorMessage)
+        {
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                // Log error nhưng không làm crash ứng dụng
+                Console.WriteLine($"{errorMessage}: {ex.Message}");
+                
+                // Có thể hiển thị notification nhỏ thay vì MessageBox popup
+                // Hoặc log vào file để debug sau này
             }
         }
 
@@ -80,8 +140,11 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                // Load student information
-                _currentStudent = await _context.SinhViens
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                // Load student information với tất cả navigation properties cần thiết
+                _currentStudent = await context.SinhViens
                     .Include(s => s.Lop)
                     .ThenInclude(l => l.Khoa)
                     .ThenInclude(k => k.Truong)
@@ -89,10 +152,27 @@ namespace StudentManagement5Good.Winform
 
                 if (_currentStudent != null)
                 {
-                    lblStudentId.Text = _currentStudent.MaSV;
-                    lblStudentName.Text = _currentStudent.HoTen;
-                    lblClassInfo.Text = $"{_currentStudent.Lop.TenLop} - {_currentStudent.Lop.Khoa.TenKhoa}";
-                    lblSchoolInfo.Text = _currentStudent.Lop.Khoa.Truong.TenTruong;
+                    lblStudentId.Text = _currentStudent.MaSV ?? "N/A";
+                    lblStudentName.Text = _currentStudent.HoTen ?? "N/A";
+                    
+                    // Kiểm tra null cho các navigation properties
+                    var classText = _currentStudent.Lop?.TenLop ?? "N/A";
+                    var facultyText = _currentStudent.Lop?.Khoa?.TenKhoa ?? "N/A";
+                    var schoolText = _currentStudent.Lop?.Khoa?.Truong?.TenTruong ?? "N/A";
+                    
+                    lblClassInfo.Text = $"{classText} - {facultyText}";
+                    lblSchoolInfo.Text = schoolText;
+                }
+                else
+                {
+                    // Nếu không tìm thấy sinh viên, hiển thị thông tin cơ bản từ User
+                    lblStudentId.Text = _currentUser.MaSV ?? "N/A";
+                    lblStudentName.Text = _currentUser.HoTen ?? "N/A";
+                    lblClassInfo.Text = "Chưa có thông tin lớp";
+                    lblSchoolInfo.Text = "Chưa có thông tin trường";
+                    
+                    MessageBox.Show("Không tìm thấy thông tin sinh viên trong hệ thống!\nVui lòng liên hệ giáo vụ để cập nhật thông tin.", 
+                                  "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
@@ -105,20 +185,35 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                if (_currentStudent == null) return;
+                // Kiểm tra _currentStudent null trước khi thực hiện queries
+                if (_currentStudent == null || string.IsNullOrEmpty(_currentStudent.MaSV))
+                {
+                    // Nếu không có thông tin sinh viên, hiển thị trạng thái mặc định
+                    SetDefaultCriteriaStatus();
+                    lblOverallStatus.Text = "Không có thông tin sinh viên";
+                    lblOverallStatus.ForeColor = Color.FromArgb(231, 76, 60);
+                    return;
+                }
+
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
                 // Load approved evidence for current student and year
-                var approvedEvidence = await _context.MinhChungs
+                var approvedEvidence = await context.MinhChungs
                     .Include(m => m.TieuChi)
                     .Where(m => m.MaSV == _currentStudent.MaSV && 
                                m.MaNH == _currentNamHoc && 
                                m.TrangThai == TrangThaiMinhChung.DaDuyet)
                     .GroupBy(m => m.MaTC)
-                    .Select(g => new { MaTC = g.Key, Count = g.Count(), TieuChi = g.First().TieuChi })
-                    .ToListAsync<dynamic>();
+                    .Select(g => new EvidenceSummary { 
+                        MaTC = g.Key, 
+                        Count = g.Count(), 
+                        TieuChi = g.First().TieuChi ?? new TieuChi { TenTieuChi = "N/A" }
+                    })
+                    .ToListAsync();
 
                 // Load evaluation results if available
-                var ketQuaXetDuyets = await _context.KetQuaXetDuyets
+                var ketQuaXetDuyets = await context.KetQuaXetDuyets
                     .Include(k => k.TieuChi)
                     .Where(k => k.MaSV == _currentStudent.MaSV && k.MaNH == _currentNamHoc)
                     .ToListAsync();
@@ -131,76 +226,35 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
+                // Set default status in case of error
+                SetDefaultCriteriaStatus();
+                lblOverallStatus.Text = "Lỗi tải dữ liệu";
+                lblOverallStatus.ForeColor = Color.FromArgb(231, 76, 60);
+                
                 throw new Exception($"Không thể tải dữ liệu đánh giá: {ex.Message}");
             }
         }
 
-        private async Task UpdateCriteriaStatus(List<DanhGia> evaluations)
+        private void SetDefaultCriteriaStatus()
         {
-            // TC01 - Đạo đức tốt
-            var daoducEval = evaluations.FirstOrDefault(e => e.MaTC == "TC01");
-            UpdateCriteriaCard(panelDaoDuc, lblDaoDucStatus, btnDaoDucAction, daoducEval, "Đạo đức tốt");
-
-            // TC02 - Học tập tốt
-            var hoctapEval = evaluations.FirstOrDefault(e => e.MaTC == "TC02");
-            UpdateCriteriaCard(panelHocTap, lblHocTapStatus, btnHocTapAction, hoctapEval, "Học tập tốt");
-
-            // TC03 - Thể lực tốt
-            var thelucEval = evaluations.FirstOrDefault(e => e.MaTC == "TC03");
-            UpdateCriteriaCard(panelTheLuc, lblTheLucStatus, btnTheLucAction, thelucEval, "Thể lực tốt");
-
-            // TC04 - Tình nguyện tốt
-            var tinhnguyenEval = evaluations.FirstOrDefault(e => e.MaTC == "TC04");
-            UpdateCriteriaCard(panelTinhNguyen, lblTinhNguyenStatus, btnTinhNguyenAction, tinhnguyenEval, "Tình nguyện tốt");
-
-            // TC05 - Hội nhập tốt
-            var hoinhapEval = evaluations.FirstOrDefault(e => e.MaTC == "TC05");
-            UpdateCriteriaCard(panelHoiNhap, lblHoiNhapStatus, btnHoiNhapAction, hoinhapEval, "Hội nhập tốt");
+            // Set tất cả tiêu chí về trạng thái mặc định
+            UpdateCriteriaCardDefault(panelDaoDuc, lblDaoDucStatus, btnDaoDucAction, "Đạo đức tốt");
+            UpdateCriteriaCardDefault(panelHocTap, lblHocTapStatus, btnHocTapAction, "Học tập tốt");
+            UpdateCriteriaCardDefault(panelTheLuc, lblTheLucStatus, btnTheLucAction, "Thể lực tốt");
+            UpdateCriteriaCardDefault(panelTinhNguyen, lblTinhNguyenStatus, btnTinhNguyenAction, "Tình nguyện tốt");
+            UpdateCriteriaCardDefault(panelHoiNhap, lblHoiNhapStatus, btnHoiNhapAction, "Hội nhập tốt");
         }
 
-        private void UpdateCriteriaCard(Panel panel, Label statusLabel, Button actionButton, DanhGia? evaluation, string criteriaName)
+        private void UpdateCriteriaCardDefault(Panel panel, Label statusLabel, Button actionButton, string criteriaName)
         {
-            if (evaluation != null && evaluation.DatTieuChi)
-            {
-                // Đã đạt
-                panel.BackColor = Color.FromArgb(46, 204, 113); // Green
-                statusLabel.Text = "✓ Đã đạt";
-                statusLabel.ForeColor = Color.White;
-                actionButton.Text = "Xem chi tiết";
-                actionButton.BackColor = Color.FromArgb(39, 174, 96);
-            }
-            else
-            {
-                // Chưa đạt
-                panel.BackColor = Color.FromArgb(231, 76, 60); // Red
-                statusLabel.Text = "✗ Chưa đạt";
-                statusLabel.ForeColor = Color.White;
-                actionButton.Text = "Nộp minh chứng";
-                actionButton.BackColor = Color.FromArgb(192, 57, 43);
-            }
-
-            // Set additional info based on criteria type
-            if (evaluation != null && !string.IsNullOrEmpty(evaluation.GiaTri))
-            {
-                switch (evaluation.MaTC)
-                {
-                    case "TC02": // Học tập
-                        statusLabel.Text += $" (GPA: {evaluation.GiaTri})";
-                        break;
-                    case "TC03": // Thể lực
-                        statusLabel.Text += $" ({evaluation.GiaTri} giờ)";
-                        break;
-                    case "TC04": // Tình nguyện
-                        statusLabel.Text += $" ({evaluation.GiaTri} giờ)";
-                        break;
-                    case "TC05": // Hội nhập
-                        statusLabel.Text += $" ({evaluation.GiaTri} điểm)";
-                        break;
-                }
-            }
+            panel.BackColor = Color.FromArgb(149, 165, 166); // Gray
+            statusLabel.Text = "Chưa có dữ liệu";
+            statusLabel.ForeColor = Color.White;
+            actionButton.Text = "Nộp minh chứng";
+            actionButton.BackColor = Color.FromArgb(127, 140, 141);
         }
 
-        private async Task UpdateCriteriaStatusNew(List<dynamic> approvedEvidence, List<KetQuaXetDuyet> ketQuaXetDuyets)
+        private Task UpdateCriteriaStatusNew(List<EvidenceSummary> approvedEvidence, List<KetQuaXetDuyet> ketQuaXetDuyets)
         {
             // TC01 - Đạo đức tốt
             var daoducKetQua = ketQuaXetDuyets.FirstOrDefault(k => k.MaTC == "TC01");
@@ -226,9 +280,11 @@ namespace StudentManagement5Good.Winform
             var hoinhapKetQua = ketQuaXetDuyets.FirstOrDefault(k => k.MaTC == "TC05");
             var hoinhapEvidence = approvedEvidence.FirstOrDefault(e => e.MaTC == "TC05");
             UpdateCriteriaCardNew(panelHoiNhap, lblHoiNhapStatus, btnHoiNhapAction, hoinhapKetQua, hoinhapEvidence, "Hội nhập tốt");
+            
+            return Task.CompletedTask;
         }
 
-        private void UpdateCriteriaCardNew(Panel panel, Label statusLabel, Button actionButton, KetQuaXetDuyet? ketQua, dynamic evidence, string criteriaName)
+        private void UpdateCriteriaCardNew(Panel panel, Label statusLabel, Button actionButton, KetQuaXetDuyet? ketQua, EvidenceSummary? evidence, string criteriaName)
         {
             if (ketQua != null && ketQua.KetQua)
             {
@@ -279,13 +335,19 @@ namespace StudentManagement5Good.Winform
             }
             else
             {
-                // Check final result
-                var finalResult = await _context.KetQuaDanhHieus
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                // Check final result with proper Include for CapXet
+                var finalResult = await context.KetQuaDanhHieus
+                    .Include(k => k.CapXet) // Include CapXet để tránh null reference
                     .FirstOrDefaultAsync(k => k.MaSV == _currentStudent.MaSV && k.MaNH == _currentNamHoc);
 
                 if (finalResult?.DatDanhHieu == true)
                 {
-                    lblOverallStatus.Text = $"🏆 Đạt danh hiệu Sinh viên 5 Tốt (Cấp {finalResult.CapXet.TenCap})";
+                    // Kiểm tra CapXet null trước khi truy cập TenCap
+                    var capXetText = finalResult.CapXet?.TenCap ?? finalResult.MaCap ?? "Không xác định";
+                    lblOverallStatus.Text = $"🏆 Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capXetText})";
                     lblOverallStatus.ForeColor = Color.FromArgb(46, 204, 113);
                 }
                 else
@@ -300,10 +362,21 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                if (_currentStudent == null) return;
+                // Clear existing data first
+                listViewMinhChung.Items.Clear();
+                lblMinhChungCount.Text = "Tổng: 0";
+
+                if (_currentStudent == null || string.IsNullOrEmpty(_currentStudent.MaSV))
+                {
+                    lblMinhChungCount.Text = "Không có thông tin sinh viên";
+                    return;
+                }
+
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
                 // Load evidence documents - Thiết kế mới: MinhChung độc lập
-                var minhchungs = await _context.MinhChungs
+                var minhchungs = await context.MinhChungs
                     .Include(m => m.TieuChi)
                     .Include(m => m.NguoiDuyetUser)
                     .Where(m => m.MaSV == _currentStudent.MaSV && m.MaNH == _currentNamHoc)
@@ -311,11 +384,10 @@ namespace StudentManagement5Good.Winform
                     .ToListAsync();
 
                 // Populate evidence list
-                listViewMinhChung.Items.Clear();
                 foreach (var mc in minhchungs)
                 {
-                    var item = new ListViewItem(mc.TenMinhChung);
-                    item.SubItems.Add(mc.TieuChi.TenTieuChi);
+                    var item = new ListViewItem(mc.TenMinhChung ?? "N/A");
+                    item.SubItems.Add(mc.TieuChi?.TenTieuChi ?? "N/A");
                     item.SubItems.Add(mc.NgayNop.ToString("dd/MM/yyyy"));
                     
                     // Trạng thái với màu sắc
@@ -349,20 +421,9 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
+                lblMinhChungCount.Text = "Lỗi tải dữ liệu minh chứng";
                 throw new Exception($"Không thể tải dữ liệu minh chứng: {ex.Message}");
             }
-        }
-
-        private string GetStatusDisplayName(string status)
-        {
-            return status switch
-            {
-                "PENDING" => "Chờ duyệt",
-                "APPROVED" => "Đã duyệt",
-                "REJECTED" => "Bị từ chối",
-                "NEED_MORE" => "Cần bổ sung",
-                _ => status
-            };
         }
 
         #region Event Handlers
@@ -416,7 +477,10 @@ namespace StudentManagement5Good.Winform
                     return;
                 }
 
-                var form = new MinhChungForm(_context, _currentUser.MaSV, maTC, _currentNamHoc);
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                var form = new MinhChungForm(context, _currentUser.MaSV, maTC, _currentNamHoc);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     // Refresh data after successful submission
@@ -442,7 +506,9 @@ namespace StudentManagement5Good.Winform
                               MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 this.Hide();
-                var loginForm = new Login(_context, _studentService, _userService);
+                
+                // Sử dụng constructor mới với ServiceProvider
+                var loginForm = new Login(_serviceProvider);
                 loginForm.ShowDialog();
             }
         }
@@ -521,15 +587,22 @@ namespace StudentManagement5Good.Winform
                     {
                         try
                         {
-                            _context.MinhChungs.Remove(minhchung);
-                            await _context.SaveChangesAsync();
-                            
-                            MessageBox.Show("Xóa minh chứng thành công!", "Thành công", 
-                                          MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            
-                            // Refresh data
-                            await LoadDashboardData();
-                            await LoadMinhChungData();
+                            using var scope = _serviceProvider.CreateScope();
+                            var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                            var evidenceToDelete = await context.MinhChungs.FindAsync(minhchung.MaMC);
+                            if (evidenceToDelete != null)
+                            {
+                                context.MinhChungs.Remove(evidenceToDelete);
+                                await context.SaveChangesAsync();
+                                
+                                MessageBox.Show("Xóa minh chứng thành công!", "Thành công", 
+                                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                
+                                // Refresh data
+                                await LoadDashboardData();
+                                await LoadMinhChungData();
+                            }
                         }
                         catch (Exception ex)
                         {

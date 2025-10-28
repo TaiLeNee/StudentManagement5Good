@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.DataAccess.Entity;
 
@@ -18,18 +19,24 @@ namespace StudentManagement5Good.Winform
     /// </summary>
     public partial class MinhChungApprovalForm : Form
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IServiceProvider _serviceProvider;
         private readonly User _currentUser;
         private List<MinhChung> _pendingEvidences;
 
-        public MinhChungApprovalForm(StudentManagementDbContext context, User currentUser)
+        public MinhChungApprovalForm(IServiceProvider serviceProvider, User currentUser)
         {
-            _context = context;
+            _serviceProvider = serviceProvider;
             _currentUser = currentUser;
             _pendingEvidences = new List<MinhChung>();
             
             InitializeComponent();
             InitializeApprovalForm();
+        }
+
+        // Constructor cũ để backward compatibility
+        public MinhChungApprovalForm(StudentManagementDbContext context, User currentUser)
+            : this(StudentManagement5GoodTempp.Program.ServiceProvider, currentUser)
+        {
         }
 
         private async void MinhChungApprovalForm_Load(object sender, EventArgs e)
@@ -86,8 +93,11 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 // Load pending evidences based on user role and authority
-                var query = _context.MinhChungs
+                var query = context.MinhChungs
                     .Include(m => m.SinhVien)
                     .ThenInclude(s => s.Lop)
                     .ThenInclude(l => l.Khoa)
@@ -127,6 +137,140 @@ namespace StudentManagement5Good.Winform
             catch (Exception ex)
             {
                 throw new Exception($"Không thể tải danh sách minh chứng chờ duyệt: {ex.Message}");
+            }
+        }
+
+        private async void btnApprove_Click(object sender, EventArgs e)
+        {
+            if (listViewEvidences.SelectedItems.Count == 0) return;
+
+            var selectedEvidence = listViewEvidences.SelectedItems[0].Tag as MinhChung;
+            if (selectedEvidence == null) return;
+
+            try
+            {
+                // Get approval decision
+                var approvalStatus = (TrangThaiMinhChung)cmbApprovalStatus.SelectedValue;
+                var feedback = txtFeedback.Text.Trim();
+
+                // Validate feedback for rejection
+                if (approvalStatus == TrangThaiMinhChung.BiTuChoi && string.IsNullOrEmpty(feedback))
+                {
+                    MessageBox.Show("Vui lòng nhập lý do từ chối!", "Thông báo", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtFeedback.Focus();
+                    return;
+                }
+
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                // Tìm lại entity trong context scope mới
+                var evidence = await context.MinhChungs.FindAsync(selectedEvidence.MaMC);
+                if (evidence == null)
+                {
+                    MessageBox.Show("Không tìm thấy minh chứng!", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Update evidence status
+                evidence.TrangThai = approvalStatus;
+                evidence.NgayDuyet = DateTime.Now;
+                evidence.NguoiDuyet = _currentUser.UserId;
+
+                if (approvalStatus == TrangThaiMinhChung.BiTuChoi)
+                    evidence.LyDoTuChoi = feedback;
+                else
+                    evidence.GhiChu = feedback;
+
+                await context.SaveChangesAsync();
+
+                MessageBox.Show($"Đã {approvalStatus.ToDisplayString().ToLower()} minh chứng thành công!", 
+                              "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Remove from pending list and refresh
+                _pendingEvidences.Remove(selectedEvidence);
+                PopulateEvidenceList();
+                UpdateStatistics();
+                ClearEvidenceDetails();
+                EnableApprovalControls(false);
+
+                // Check if we should create evaluation result
+                if (approvalStatus == TrangThaiMinhChung.DaDuyet)
+                {
+                    await CheckAndCreateEvaluationResult(evidence);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi duyệt minh chứng: {ex.Message}", "Lỗi", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task CheckAndCreateEvaluationResult(MinhChung approvedEvidence)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
+                // Check if there's already an evaluation result for this student-criteria-year
+                var existingResult = await context.KetQuaXetDuyets
+                    .FirstOrDefaultAsync(k => k.MaSV == approvedEvidence.MaSV &&
+                                            k.MaTC == approvedEvidence.MaTC &&
+                                            k.MaNH == approvedEvidence.MaNH &&
+                                            k.MaCap == "LOP"); // Start with class level
+
+                if (existingResult == null)
+                {
+                    // Count approved evidences for this criteria
+                    var approvedCount = await context.MinhChungs
+                        .CountAsync(m => m.MaSV == approvedEvidence.MaSV &&
+                                       m.MaTC == approvedEvidence.MaTC &&
+                                       m.MaNH == approvedEvidence.MaNH &&
+                                       m.TrangThai == TrangThaiMinhChung.DaDuyet);
+
+                    // Create evaluation result if criteria is met (simplified logic)
+                    if (approvedCount >= 1) // At least 1 approved evidence
+                    {
+                        var ketQuaXetDuyet = new KetQuaXetDuyet
+                        {
+                            MaKQ = Guid.NewGuid().ToString("N")[..20],
+                            MaSV = approvedEvidence.MaSV,
+                            MaTC = approvedEvidence.MaTC,
+                            MaCap = "LOP",
+                            MaNH = approvedEvidence.MaNH,
+                            KetQua = true,
+                            SoMinhChungDaDuyet = approvedCount,
+                            TongSoMinhChung = approvedCount,
+                            NgayXetDuyet = DateTime.Now,
+                            NguoiXetDuyet = _currentUser.UserId,
+                            TrangThaiHoSo = "HOAN_THANH"
+                        };
+
+                        context.KetQuaXetDuyets.Add(ketQuaXetDuyet);
+                        await context.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    // Update existing result
+                    existingResult.SoMinhChungDaDuyet = await context.MinhChungs
+                        .CountAsync(m => m.MaSV == approvedEvidence.MaSV &&
+                                       m.MaTC == approvedEvidence.MaTC &&
+                                       m.MaNH == approvedEvidence.MaNH &&
+                                       m.TrangThai == TrangThaiMinhChung.DaDuyet);
+                    
+                    existingResult.NgayXetDuyet = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the approval process
+                Console.WriteLine($"Error creating evaluation result: {ex.Message}");
             }
         }
 
@@ -228,125 +372,6 @@ namespace StudentManagement5Good.Winform
             txtFeedback.Enabled = enabled;
             btnApprove.Enabled = enabled;
             btnViewFile.Enabled = enabled;
-        }
-
-        private async void btnApprove_Click(object sender, EventArgs e)
-        {
-            if (listViewEvidences.SelectedItems.Count == 0) return;
-
-            var selectedEvidence = listViewEvidences.SelectedItems[0].Tag as MinhChung;
-            if (selectedEvidence == null) return;
-
-            try
-            {
-                // Get approval decision
-                var approvalStatus = (TrangThaiMinhChung)cmbApprovalStatus.SelectedValue;
-                var feedback = txtFeedback.Text.Trim();
-
-                // Validate feedback for rejection
-                if (approvalStatus == TrangThaiMinhChung.BiTuChoi && string.IsNullOrEmpty(feedback))
-                {
-                    MessageBox.Show("Vui lòng nhập lý do từ chối!", "Thông báo", 
-                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    txtFeedback.Focus();
-                    return;
-                }
-
-                // Update evidence status
-                selectedEvidence.TrangThai = approvalStatus;
-                selectedEvidence.NgayDuyet = DateTime.Now;
-                selectedEvidence.NguoiDuyet = _currentUser.UserId;
-
-                if (approvalStatus == TrangThaiMinhChung.BiTuChoi)
-                    selectedEvidence.LyDoTuChoi = feedback;
-                else
-                    selectedEvidence.GhiChu = feedback;
-
-                await _context.SaveChangesAsync();
-
-                MessageBox.Show($"Đã {approvalStatus.ToDisplayString().ToLower()} minh chứng thành công!", 
-                              "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Remove from pending list and refresh
-                _pendingEvidences.Remove(selectedEvidence);
-                PopulateEvidenceList();
-                UpdateStatistics();
-                ClearEvidenceDetails();
-                EnableApprovalControls(false);
-
-                // Check if we should create evaluation result
-                if (approvalStatus == TrangThaiMinhChung.DaDuyet)
-                {
-                    await CheckAndCreateEvaluationResult(selectedEvidence);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi duyệt minh chứng: {ex.Message}", "Lỗi", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async Task CheckAndCreateEvaluationResult(MinhChung approvedEvidence)
-        {
-            try
-            {
-                // Check if there's already an evaluation result for this student-criteria-year
-                var existingResult = await _context.KetQuaXetDuyets
-                    .FirstOrDefaultAsync(k => k.MaSV == approvedEvidence.MaSV &&
-                                            k.MaTC == approvedEvidence.MaTC &&
-                                            k.MaNH == approvedEvidence.MaNH &&
-                                            k.MaCap == "LOP"); // Start with class level
-
-                if (existingResult == null)
-                {
-                    // Count approved evidences for this criteria
-                    var approvedCount = await _context.MinhChungs
-                        .CountAsync(m => m.MaSV == approvedEvidence.MaSV &&
-                                       m.MaTC == approvedEvidence.MaTC &&
-                                       m.MaNH == approvedEvidence.MaNH &&
-                                       m.TrangThai == TrangThaiMinhChung.DaDuyet);
-
-                    // Create evaluation result if criteria is met (simplified logic)
-                    if (approvedCount >= 1) // At least 1 approved evidence
-                    {
-                        var ketQuaXetDuyet = new KetQuaXetDuyet
-                        {
-                            MaKQ = Guid.NewGuid().ToString("N")[..20],
-                            MaSV = approvedEvidence.MaSV,
-                            MaTC = approvedEvidence.MaTC,
-                            MaCap = "LOP",
-                            MaNH = approvedEvidence.MaNH,
-                            KetQua = true,
-                            SoMinhChungDaDuyet = approvedCount,
-                            TongSoMinhChung = approvedCount,
-                            NgayXetDuyet = DateTime.Now,
-                            NguoiXetDuyet = _currentUser.UserId,
-                            TrangThaiHoSo = "HOAN_THANH"
-                        };
-
-                        _context.KetQuaXetDuyets.Add(ketQuaXetDuyet);
-                        await _context.SaveChangesAsync();
-                    }
-                }
-                else
-                {
-                    // Update existing result
-                    existingResult.SoMinhChungDaDuyet = await _context.MinhChungs
-                        .CountAsync(m => m.MaSV == approvedEvidence.MaSV &&
-                                       m.MaTC == approvedEvidence.MaTC &&
-                                       m.MaNH == approvedEvidence.MaNH &&
-                                       m.TrangThai == TrangThaiMinhChung.DaDuyet);
-                    
-                    existingResult.NgayXetDuyet = DateTime.Now;
-                    await _context.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log error but don't fail the approval process
-                Console.WriteLine($"Error creating evaluation result: {ex.Message}");
-            }
         }
 
         private void btnViewFile_Click(object sender, EventArgs e)

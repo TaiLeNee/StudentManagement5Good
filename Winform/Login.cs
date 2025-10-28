@@ -1,29 +1,36 @@
 ﻿using System.Configuration;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.Services;
 using StudentManagement5GoodTempp.DataAccess.Entity;
 using StudentManagement5Good.Winform;
+
 namespace StudentManagement5Good
 {
     public partial class Login : Form
     {
-        private readonly StudentManagementDbContext _context;
-        private readonly IStudentService _studentService;
-        private readonly IUserService _userService;
+        private readonly IServiceProvider _serviceProvider;
         private User? _currentUser;
 
-        public Login() { 
+        // Constructor chính được DI container sử dụng
+        public Login(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             InitializeComponent();
         }
 
-        public Login(StudentManagementDbContext context, IStudentService studentService, IUserService userService)
-        {
-            _context = context;
-            _studentService = studentService;
-            _userService = userService;
+        // Constructor mặc định - chỉ dùng cho designer
+        public Login() 
+        { 
             InitializeComponent();
+            
+            // Nếu không có serviceProvider, tạo một instance tạm thời cho designer
+            if (_serviceProvider == null && !DesignMode)
+            {
+                throw new InvalidOperationException("ServiceProvider is required. Use the parameterized constructor.");
+            }
         }
 
         public User? CurrentUser => _currentUser;
@@ -32,8 +39,14 @@ namespace StudentManagement5Good
         {
             try
             {
+                // Kiểm tra nếu đang ở design mode thì không làm gì
+                if (DesignMode || _serviceProvider == null) return;
+
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 // Initialize database and apply migrations
-                await _context.Database.MigrateAsync();
+                await context.Database.MigrateAsync();
 
                 // Set password field to use password char
                 passwordTxt.UseSystemPasswordChar = true;
@@ -45,9 +58,9 @@ namespace StudentManagement5Good
                 this.Text = "Đăng nhập - Hệ thống Quản lý Sinh viên 5 Tốt";
 
                 // Test connection by getting count of records (for development only)
-                var studentCount = await _context.SinhViens.CountAsync();
-                var khoaCount = await _context.Khoas.CountAsync();
-                var userCount = await _context.Users.CountAsync();
+                var studentCount = await context.SinhViens.CountAsync();
+                var khoaCount = await context.Khoas.CountAsync();
+                var userCount = await context.Users.CountAsync();
 
                 // Display connection status in the form title (for development)
                 this.Text += $" | DB: {userCount} users, {studentCount} students, {khoaCount} faculties";
@@ -62,6 +75,14 @@ namespace StudentManagement5Good
         {
             try
             {
+                // Kiểm tra ServiceProvider
+                if (_serviceProvider == null)
+                {
+                    MessageBox.Show("Lỗi hệ thống: ServiceProvider không được khởi tạo!", "Lỗi", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 // Get username and password from controls
                 var username = userNameTxt.Text.Trim();
                 var password = passwordTxt.Text.Trim();
@@ -78,8 +99,13 @@ namespace StudentManagement5Good
                 loginbtn.Enabled = false;
                 loginbtn.Text = "Đang đăng nhập...";
 
+                // Create new scope for authentication
+                using var scope = _serviceProvider.CreateScope();
+                var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
+                var studentService = scope.ServiceProvider.GetRequiredService<IStudentService>();
+
                 // Authenticate user
-                _currentUser = await _userService.AuthenticateAsync(username, password);
+                _currentUser = await userService.AuthenticateAsync(username, password);
 
                 if (_currentUser != null)
                 {
@@ -94,13 +120,13 @@ namespace StudentManagement5Good
                     if (_currentUser.VaiTro == UserRoles.SINHVIEN)
                     {
                         // Show Student Dashboard for students
-                        var studentDashboard = new StudentDashboard(_context, _userService, _studentService, _currentUser);
+                        var studentDashboard = new StudentDashboard(_serviceProvider, userService, studentService, _currentUser);
                         studentDashboard.ShowDialog();
                     }
                     else
                     {
                         // Show Admin/Staff Dashboard for other roles
-                        var adminDashboard = new UserDashboard(_context, _userService, _studentService, _currentUser);
+                        var adminDashboard = new UserDashboard(_serviceProvider, userService, studentService, _currentUser);
                         adminDashboard.ShowDialog();
                     }
                     
@@ -181,8 +207,13 @@ namespace StudentManagement5Good
         {
             try
             {
+                if (_serviceProvider == null) return;
+
+                using var scope = _serviceProvider.CreateScope();
+                var studentService = scope.ServiceProvider.GetRequiredService<IStudentService>();
+
                 // Example of using the service to get data
-                var students = await _studentService.GetAllStudentsAsync();
+                var students = await studentService.GetAllStudentsAsync();
 
                 // You could populate a DataGridView or other controls here
                 // For example:

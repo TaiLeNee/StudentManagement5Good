@@ -26,12 +26,12 @@ namespace StudentManagement5GoodTempp.DataAccess.Entity
         public string MaSV { get; set; } = string.Empty;
 
         [Column("maTC")]
-        [MaxLength(10)]
+        [MaxLength(20)]
         [Required]
         public string MaTC { get; set; } = string.Empty;
 
         [Column("maNH")]
-        [MaxLength(10)]
+        [MaxLength(20)]
         [Required]
         public string MaNH { get; set; } = string.Empty;
 

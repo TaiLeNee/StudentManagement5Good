@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.DataAccess.Entity;
 
@@ -12,18 +13,24 @@ namespace StudentManagement5Good.Winform
 {
     public partial class StudentProfileReviewForm : Form
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IServiceProvider _serviceProvider;
         private readonly User _currentUser;
         private string _currentNamHoc;
         private SinhVien? _selectedStudent;
         private Dictionary<string, List<MinhChung>> _criteriaEvidences = new();
         private Dictionary<string, bool> _criteriaStatus = new();
 
-        public StudentProfileReviewForm(StudentManagementDbContext context, User currentUser)
+        public StudentProfileReviewForm(IServiceProvider serviceProvider, User currentUser)
         {
-            _context = context;
+            _serviceProvider = serviceProvider;
             _currentUser = currentUser;
             InitializeComponent();
+        }
+
+        // Constructor cũ để backward compatibility
+        public StudentProfileReviewForm(StudentManagementDbContext context, User currentUser)
+            : this(StudentManagement5GoodTempp.Program.ServiceProvider, currentUser)
+        {
         }
 
         private async void StudentProfileReviewForm_Load(object sender, EventArgs e)
@@ -33,8 +40,11 @@ namespace StudentManagement5Good.Winform
                 // Delay to ensure parent form has stopped all operations
                 await Task.Delay(200);
                 
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 // Load current academic year with AsNoTracking to avoid conflicts
-                var currentYear = await _context.NamHocs
+                var currentYear = await context.NamHocs
                     .AsNoTracking()
                     .OrderByDescending(nh => nh.TuNgay)
                     .FirstOrDefaultAsync();
@@ -67,6 +77,9 @@ namespace StudentManagement5Good.Winform
             cmbUnitFilter.Items.Clear();
             cmbUnitFilter.Items.Add("Tất cả đơn vị");
 
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
             if (_currentUser.VaiTro == UserRoles.CVHT)
             {
                 // CVHT chỉ thấy lớp mình
@@ -76,7 +89,7 @@ namespace StudentManagement5Good.Winform
             else if (_currentUser.VaiTro == UserRoles.DOANKHOA || _currentUser.VaiTro == UserRoles.GIAOVU)
             {
                 // Đoàn Khoa/Giáo vụ thấy theo khoa
-                var lops = _context.Lops.Where(l => l.MaKhoa == _currentUser.MaKhoa).ToList();
+                var lops = context.Lops.Where(l => l.MaKhoa == _currentUser.MaKhoa).ToList();
                 foreach (var lop in lops)
                 {
                     cmbUnitFilter.Items.Add($"Lớp: {lop.TenLop}");
@@ -94,10 +107,13 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 listViewStudents.Items.Clear();
 
                 // Build query based on filters (read-only, no tracking)
-                var query = _context.SinhViens
+                var query = context.SinhViens
                     .AsNoTracking()
                     .Include(sv => sv.Lop)
                     .ThenInclude(l => l.Khoa)
@@ -127,19 +143,19 @@ namespace StudentManagement5Good.Winform
                 // Load evidence count for each student (read-only)
                 foreach (var student in students)
                 {
-                    var evidenceCount = await _context.MinhChungs
+                    var evidenceCount = await context.MinhChungs
                         .AsNoTracking()
                         .Where(mc => mc.MaSV == student.MaSV && mc.MaNH == _currentNamHoc)
                         .CountAsync();
 
-                    var approvedCount = await _context.MinhChungs
+                    var approvedCount = await context.MinhChungs
                         .AsNoTracking()
                         .Where(mc => mc.MaSV == student.MaSV && 
                                    mc.MaNH == _currentNamHoc &&
                                    mc.TrangThai == TrangThaiMinhChung.DaDuyet)
                         .CountAsync();
 
-                    var pendingCount = await _context.MinhChungs
+                    var pendingCount = await context.MinhChungs
                         .AsNoTracking()
                         .Where(mc => mc.MaSV == student.MaSV && 
                                    mc.MaNH == _currentNamHoc &&
@@ -154,7 +170,7 @@ namespace StudentManagement5Good.Winform
                     }
                     else if (cmbStatusFilter.SelectedIndex == 2) // Cần bổ sung
                     {
-                        var rejectedCount = await _context.MinhChungs
+                        var rejectedCount = await context.MinhChungs
                             .Where(mc => mc.MaSV == student.MaSV && 
                                        mc.MaNH == _currentNamHoc &&
                                        mc.TrangThai == TrangThaiMinhChung.BiTuChoi)
@@ -243,6 +259,9 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 lblNoStudentSelected.Visible = false;
                 panelStudentInfo.Visible = true;
                 tabControlCriteria.Visible = true;
@@ -254,13 +273,13 @@ namespace StudentManagement5Good.Winform
                 lblStudentClass.Text = $"Lớp: {student.Lop?.TenLop ?? "N/A"} - Khoa: {student.Lop?.Khoa?.TenKhoa ?? "N/A"}";
 
                 // Load criteria and evidences (read-only)
-                var allCriteria = await _context.TieuChis
+                var allCriteria = await context.TieuChis
                     .AsNoTracking()
                     .Include(tc => tc.TieuChiYeuCaus)
                     .OrderBy(tc => tc.MaTC)
                     .ToListAsync();
 
-                var allEvidences = await _context.MinhChungs
+                var allEvidences = await context.MinhChungs
                     .AsNoTracking()
                     .Include(mc => mc.TieuChi)
                     .Where(mc => mc.MaSV == student.MaSV && mc.MaNH == _currentNamHoc)
@@ -270,14 +289,14 @@ namespace StudentManagement5Good.Winform
                 _criteriaEvidences.Clear();
                 _criteriaStatus.Clear();
 
-                // Group criteria by first 2 characters of MaTC (e.g., HT, DD, TL, TN, HN)
+                // Sử dụng mapping mới dựa trên MaTC thực tế
                 var criteriaGroups = new Dictionary<string, List<TieuChi>>
                 {
-                    ["HocTap"] = allCriteria.Where(tc => tc.MaTC.StartsWith("HT")).ToList(),
-                    ["DaoDuc"] = allCriteria.Where(tc => tc.MaTC.StartsWith("DD")).ToList(),
-                    ["TheLuc"] = allCriteria.Where(tc => tc.MaTC.StartsWith("TL")).ToList(),
-                    ["TinhNguyen"] = allCriteria.Where(tc => tc.MaTC.StartsWith("TN")).ToList(),
-                    ["HoiNhap"] = allCriteria.Where(tc => tc.MaTC.StartsWith("HN")).ToList()
+                    ["HocTap"] = allCriteria.Where(tc => tc.MaTC.Equals("TC02")).ToList(),     // TC02 - Học tập tốt
+                    ["DaoDuc"] = allCriteria.Where(tc => tc.MaTC.Equals("TC01")).ToList(),    // TC01 - Đạo đức tốt
+                    ["TheLuc"] = allCriteria.Where(tc => tc.MaTC.Equals("TC03")).ToList(),    // TC03 - Thể lực tốt
+                    ["TinhNguyen"] = allCriteria.Where(tc => tc.MaTC.Equals("TC04")).ToList(), // TC04 - Tình nguyện tốt
+                    ["HoiNhap"] = allCriteria.Where(tc => tc.MaTC.Equals("TC05")).ToList()    // TC05 - Hội nhập tốt
                 };
 
                 // Populate tabs
@@ -536,19 +555,26 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                evidence.TrangThai = TrangThaiMinhChung.DaDuyet;
-                evidence.NguoiDuyet = _currentUser.UserId;
-                evidence.NgayDuyet = DateTime.Now;
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
-                await _context.SaveChangesAsync();
-
-                MessageBox.Show("Đã duyệt minh chứng thành công!", "Thành công",
-                              MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Reload profile
-                if (_selectedStudent != null)
+                var evidenceToUpdate = await context.MinhChungs.FindAsync(evidence.MaMC);
+                if (evidenceToUpdate != null)
                 {
-                    await LoadStudentProfile(_selectedStudent);
+                    evidenceToUpdate.TrangThai = TrangThaiMinhChung.DaDuyet;
+                    evidenceToUpdate.NguoiDuyet = _currentUser.UserId;
+                    evidenceToUpdate.NgayDuyet = DateTime.Now;
+
+                    await context.SaveChangesAsync();
+
+                    MessageBox.Show("Đã duyệt minh chứng thành công!", "Thành công",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Reload profile
+                    if (_selectedStudent != null)
+                    {
+                        await LoadStudentProfile(_selectedStudent);
+                    }
                 }
             }
             catch (Exception ex)
@@ -570,20 +596,27 @@ namespace StudentManagement5Good.Winform
 
             try
             {
-                evidence.TrangThai = TrangThaiMinhChung.BiTuChoi;
-                evidence.NguoiDuyet = _currentUser.UserId;
-                evidence.NgayDuyet = DateTime.Now;
-                evidence.MoTa = $"[TỪ CHỐI] {reason}"; // Store reason in description
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
-                await _context.SaveChangesAsync();
-
-                MessageBox.Show("Đã từ chối minh chứng!", "Thành công",
-                              MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Reload profile
-                if (_selectedStudent != null)
+                var evidenceToUpdate = await context.MinhChungs.FindAsync(evidence.MaMC);
+                if (evidenceToUpdate != null)
                 {
-                    await LoadStudentProfile(_selectedStudent);
+                    evidenceToUpdate.TrangThai = TrangThaiMinhChung.BiTuChoi;
+                    evidenceToUpdate.NguoiDuyet = _currentUser.UserId;
+                    evidenceToUpdate.NgayDuyet = DateTime.Now;
+                    evidenceToUpdate.LyDoTuChoi = reason;
+
+                    await context.SaveChangesAsync();
+
+                    MessageBox.Show("Đã từ chối minh chứng!", "Thành công",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Reload profile
+                    if (_selectedStudent != null)
+                    {
+                        await LoadStudentProfile(_selectedStudent);
+                    }
                 }
             }
             catch (Exception ex)
@@ -648,8 +681,11 @@ namespace StudentManagement5Good.Winform
 
             try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+
                 // Create or update final result for KetQuaDanhHieu
-                var finalResult = await _context.KetQuaDanhHieus
+                var finalResult = await context.KetQuaDanhHieus
                     .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent.MaSV && 
                                             k.MaNH == _currentNamHoc);
 
@@ -665,7 +701,7 @@ namespace StudentManagement5Good.Winform
                         NgayDat = DateTime.Now,
                         GhiChu = txtGeneralNote.Text
                     };
-                    _context.KetQuaDanhHieus.Add(finalResult);
+                    context.KetQuaDanhHieus.Add(finalResult);
                 }
                 else
                 {
@@ -676,7 +712,7 @@ namespace StudentManagement5Good.Winform
                 }
 
                 // Also create KetQuaXetDuyet records for each approved criterion
-                var approvedCriteria = await _context.MinhChungs
+                var approvedCriteria = await context.MinhChungs
                     .Where(mc => mc.MaSV == _selectedStudent.MaSV && 
                                mc.MaNH == _currentNamHoc &&
                                mc.TrangThai == TrangThaiMinhChung.DaDuyet)
@@ -686,7 +722,7 @@ namespace StudentManagement5Good.Winform
 
                 foreach (var maTC in approvedCriteria)
                 {
-                    var existingResult = await _context.KetQuaXetDuyets
+                    var existingResult = await context.KetQuaXetDuyets
                         .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent.MaSV &&
                                                 k.MaTC == maTC &&
                                                 k.MaNH == _currentNamHoc &&
@@ -706,11 +742,11 @@ namespace StudentManagement5Good.Winform
                             NguoiXetDuyet = _currentUser.UserId,
                             GhiChu = txtGeneralNote.Text
                         };
-                        _context.KetQuaXetDuyets.Add(ketQuaXetDuyet);
+                        context.KetQuaXetDuyets.Add(ketQuaXetDuyet);
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 MessageBox.Show("Đã công nhận Sinh viên 5 Tốt thành công!", "Thành công",
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -729,10 +765,10 @@ namespace StudentManagement5Good.Winform
         {
             return _currentUser.VaiTro switch
             {
-                UserRoles.CVHT => "CAP1", // Cấp lớp
-                UserRoles.DOANKHOA => "CAP2", // Cấp khoa
-                UserRoles.DOANTRUONG => "CAP3", // Cấp trường
-                _ => "CAP1"
+                UserRoles.CVHT => "LOP", // Cấp lớp
+                UserRoles.DOANKHOA => "KHOA", // Cấp khoa
+                UserRoles.DOANTRUONG => "TRUONG", // Cấp trường
+                _ => "LOP"
             };
         }
 

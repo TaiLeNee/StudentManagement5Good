@@ -37,7 +37,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasKey("MaCap");
 
-                    b.ToTable("CAPXET");
+                    b.ToTable("CAPXET", (string)null);
 
                     b.HasData(
                         new
@@ -128,7 +128,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaTC");
 
-                    b.ToTable("DANHGIA");
+                    b.ToTable("DANHGIA", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.KetQuaDanhHieu", b =>
@@ -179,7 +179,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaSV");
 
-                    b.ToTable("KETQUADANHHIEU");
+                    b.ToTable("KETQUADANHHIEU", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.KetQuaXetDuyet", b =>
@@ -277,7 +277,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("NguoiXetDuyet");
 
-                    b.ToTable("KETQUAXETDUYET");
+                    b.ToTable("KETQUAXETDUYET", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.Khoa", b =>
@@ -344,7 +344,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaTruong");
 
-                    b.ToTable("KHOA");
+                    b.ToTable("KHOA", (string)null);
 
                     b.HasData(
                         new
@@ -407,7 +407,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaKhoa");
 
-                    b.ToTable("LOP");
+                    b.ToTable("LOP", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.MinhChung", b =>
@@ -449,8 +449,8 @@ namespace StudentManagement5Good.Migrations
 
                     b.Property<string>("MaNH")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
                         .HasColumnName("maNH");
 
                     b.Property<string>("MaSV")
@@ -461,8 +461,8 @@ namespace StudentManagement5Good.Migrations
 
                     b.Property<string>("MaTC")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
                         .HasColumnName("maTC");
 
                     b.Property<string>("MoTa")
@@ -512,7 +512,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("NguoiDuyet");
 
-                    b.ToTable("MINHCHUNG");
+                    b.ToTable("MINHCHUNG", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.NamHoc", b =>
@@ -538,7 +538,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasKey("MaNH");
 
-                    b.ToTable("NAMHOC", t =>
+                    b.ToTable("NAMHOC", null, t =>
                         {
                             t.HasCheckConstraint("CK_NamHoc_TuNgay_DenNgay", "tuNgay < denNgay");
                         });
@@ -611,7 +611,7 @@ namespace StudentManagement5Good.Migrations
                         .IsUnique()
                         .HasFilter("[soDienThoai] IS NOT NULL");
 
-                    b.ToTable("SINHVIEN");
+                    b.ToTable("SINHVIEN", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.ThanhPho", b =>
@@ -676,7 +676,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasKey("MaTP");
 
-                    b.ToTable("THANHPHO");
+                    b.ToTable("THANHPHO", (string)null);
 
                     b.HasData(
                         new
@@ -741,7 +741,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasKey("MaTC");
 
-                    b.ToTable("TIEUCHI");
+                    b.ToTable("TIEUCHI", (string)null);
 
                     b.HasData(
                         new
@@ -817,7 +817,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaCap");
 
-                    b.ToTable("TIEUCHIYEUCAU");
+                    b.ToTable("TIEUCHIYEUCAU", (string)null);
                 });
 
             modelBuilder.Entity("StudentManagement5GoodTempp.DataAccess.Entity.Truong", b =>
@@ -904,7 +904,7 @@ namespace StudentManagement5Good.Migrations
 
                     b.HasIndex("MaTP");
 
-                    b.ToTable("TRUONG");
+                    b.ToTable("TRUONG", (string)null);
 
                     b.HasData(
                         new
@@ -1050,7 +1050,7 @@ namespace StudentManagement5Good.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("USER");
+                    b.ToTable("USER", (string)null);
 
                     b.HasData(
                         new
