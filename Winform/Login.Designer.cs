@@ -61,7 +61,7 @@ namespace StudentManagement5Good
             // 
             // panelLeft
             // 
-            panelLeft.BackColor = Color.FromArgb(41, 128, 185);
+            panelLeft.BackColor = Color.FromArgb(39, 23, 87);
             panelLeft.Controls.Add(lblSlogan);
             panelLeft.Controls.Add(lblSystemName);
             panelLeft.Controls.Add(pictureBoxLogo);
@@ -76,7 +76,7 @@ namespace StudentManagement5Good
             // 
             lblSlogan.Font = new Font("Segoe UI", 12F, FontStyle.Italic);
             lblSlogan.ForeColor = Color.FromArgb(236, 240, 241);
-            lblSlogan.Location = new Point(26, 322);
+            lblSlogan.Location = new Point(26, 338);
             lblSlogan.Name = "lblSlogan";
             lblSlogan.Size = new Size(341, 45);
             lblSlogan.TabIndex = 2;
@@ -85,19 +85,19 @@ namespace StudentManagement5Good
             // 
             // lblSystemName
             // 
-            lblSystemName.Font = new Font("Microsoft Tai Le", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lblSystemName.ForeColor = Color.White;
-            lblSystemName.Location = new Point(26, 255);
+            lblSystemName.Font = new Font("Segoe UI", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblSystemName.ForeColor = Color.FromArgb(252, 202, 3);
+            lblSystemName.Location = new Point(26, 254);
             lblSystemName.Name = "lblSystemName";
-            lblSystemName.Size = new Size(341, 72);
+            lblSystemName.Size = new Size(341, 84);
             lblSystemName.TabIndex = 1;
-            lblSystemName.Text = "Hệ thống quản lý\r\nSINH VIÊN 5 TỐT";
+            lblSystemName.Text = "HỆ THỐNG QUẢN LÝ SINH VIÊN 5 TỐT";
             lblSystemName.TextAlign = ContentAlignment.MiddleCenter;
             lblSystemName.Click += lblSystemName_Click;
             // 
             // pictureBoxLogo
             // 
-            pictureBoxLogo.BackColor = Color.FromArgb(41, 128, 185);
+            pictureBoxLogo.BackColor = Color.FromArgb(39, 23, 87);
             pictureBoxLogo.Image = Properties.Resources._1200px_LogoUTC_removebg_preview;
             pictureBoxLogo.Location = new Point(131, 112);
             pictureBoxLogo.Margin = new Padding(3, 2, 3, 2);
@@ -109,7 +109,7 @@ namespace StudentManagement5Good
             // 
             // panelRight
             // 
-            panelRight.BackColor = Color.White;
+            panelRight.BackColor = Color.FromArgb(255, 251, 162);
             panelRight.Controls.Add(lblFooter);
             panelRight.Controls.Add(panelLoginContainer);
             panelRight.Dock = DockStyle.Fill;
@@ -178,7 +178,8 @@ namespace StudentManagement5Good
             // 
             // panelPasswordBox
             // 
-            panelPasswordBox.BackColor = Color.FromArgb(245, 247, 250);
+            panelPasswordBox.BackColor = Color.FromArgb(255, 251, 162);
+            panelPasswordBox.BorderStyle = BorderStyle.FixedSingle;
             panelPasswordBox.Controls.Add(btnTogglePassword);
             panelPasswordBox.Controls.Add(lblPasswordIcon);
             panelPasswordBox.Controls.Add(passwordTxt);
@@ -206,6 +207,7 @@ namespace StudentManagement5Good
             // 
             // lblPasswordIcon
             // 
+            lblPasswordIcon.BackColor = Color.FromArgb(255, 251, 162);
             lblPasswordIcon.Font = new Font("Segoe UI", 16F);
             lblPasswordIcon.Location = new Point(7, 1);
             lblPasswordIcon.Name = "lblPasswordIcon";
@@ -217,7 +219,7 @@ namespace StudentManagement5Good
             // 
             // passwordTxt
             // 
-            passwordTxt.BackColor = Color.FromArgb(245, 247, 250);
+            passwordTxt.BackColor = Color.FromArgb(255, 251, 162);
             passwordTxt.BorderStyle = BorderStyle.None;
             passwordTxt.Font = new Font("Segoe UI", 12F);
             passwordTxt.Location = new Point(44, 8);
@@ -229,7 +231,8 @@ namespace StudentManagement5Good
             // 
             // panelUsernameBox
             // 
-            panelUsernameBox.BackColor = Color.FromArgb(245, 247, 250);
+            panelUsernameBox.BackColor = Color.FromArgb(255, 251, 162);
+            panelUsernameBox.BorderStyle = BorderStyle.FixedSingle;
             panelUsernameBox.Controls.Add(lblUsernameIcon);
             panelUsernameBox.Controls.Add(userNameTxt);
             panelUsernameBox.Location = new Point(9, 128);
@@ -250,7 +253,7 @@ namespace StudentManagement5Good
             // 
             // userNameTxt
             // 
-            userNameTxt.BackColor = Color.FromArgb(245, 247, 250);
+            userNameTxt.BackColor = Color.FromArgb(255, 251, 162);
             userNameTxt.BorderStyle = BorderStyle.None;
             userNameTxt.Font = new Font("Segoe UI", 12F);
             userNameTxt.Location = new Point(44, 8);
@@ -261,7 +264,7 @@ namespace StudentManagement5Good
             // 
             // loginbtn
             // 
-            loginbtn.BackColor = Color.FromArgb(41, 128, 185);
+            loginbtn.BackColor = Color.FromArgb(39, 23, 86);
             loginbtn.Cursor = Cursors.Hand;
             loginbtn.FlatAppearance.BorderSize = 0;
             loginbtn.FlatStyle = FlatStyle.Flat;
@@ -301,7 +304,7 @@ namespace StudentManagement5Good
             // lblSubtitle
             // 
             lblSubtitle.Font = new Font("Segoe UI", 10F);
-            lblSubtitle.ForeColor = Color.FromArgb(149, 165, 166);
+            lblSubtitle.ForeColor = Color.Black;
             lblSubtitle.Location = new Point(14, 52);
             lblSubtitle.Name = "lblSubtitle";
             lblSubtitle.Size = new Size(446, 22);

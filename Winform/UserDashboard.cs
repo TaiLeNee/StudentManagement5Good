@@ -279,14 +279,23 @@ namespace StudentManagement5Good.Winform
 
             // Report level filter
             cmbReportLevel.Items.Clear();
-            cmbReportLevel.Items.Add("Cấp Trường");
-            cmbReportLevel.Items.Add("Cấp Khoa");
-            cmbReportLevel.Items.Add("Cấp Lớp");
+            cmbReportLevel.Items.Add("Tất cả");
+            cmbReportLevel.Items.Add("Lớp");
+            cmbReportLevel.Items.Add("Khoa");
+            cmbReportLevel.Items.Add("Trường");
+            cmbReportLevel.Items.Add("Thành phố");
+            cmbReportLevel.Items.Add("Trung ương");
             cmbReportLevel.SelectedIndex = 0;
 
-            // Set default date range
-            dateTimePickerFrom.Value = new DateTime(DateTime.Now.Year, 1, 1);
-            dateTimePickerTo.Value = DateTime.Now;
+            // Set default date range (if these controls exist)
+            try
+            {
+                if (dateTimePickerFrom != null)
+                    dateTimePickerFrom.Value = new DateTime(DateTime.Now.Year, 1, 1);
+                if (dateTimePickerTo != null)
+                    dateTimePickerTo.Value = DateTime.Now;
+            }
+            catch { } // Ignore if controls don't exist
         }
 
         private string GetRoleDisplayName(string role)
@@ -393,14 +402,14 @@ namespace StudentManagement5Good.Winform
         private void UpdateNavigationButtons(Button activeButton)
         {
             // Reset all buttons
-            btnDashboard.BackColor = Color.FromArgb(52, 73, 94);
-            btnApprovalCenter.BackColor = Color.FromArgb(52, 73, 94);
-            btnUserManagement.BackColor = Color.FromArgb(52, 73, 94);
-            btnReportsStats.BackColor = Color.FromArgb(52, 73, 94);
-            btnSystemConfig.BackColor = Color.FromArgb(52, 73, 94);
+            btnDashboard.BackColor = Color.FromArgb(255, 251, 162);
+            btnApprovalCenter.BackColor = Color.FromArgb(255, 251, 162);
+            btnUserManagement.BackColor = Color.FromArgb(255, 251, 162);
+            btnReportsStats.BackColor = Color.FromArgb(255, 251, 162);
+            btnSystemConfig.BackColor = Color.FromArgb(255, 251, 162);
 
             // Highlight active button
-            activeButton.BackColor = Color.FromArgb(41, 128, 185);
+            activeButton.BackColor = Color.FromArgb(250, 203, 2);
         }
 
         #endregion
@@ -984,15 +993,28 @@ namespace StudentManagement5Good.Winform
 
         private void LoadReportsData()
         {
-            // Initialize chart
-            InitializeChart();
+            // Initialize chart if exists
+            if (chartStatistics != null)
+            {
+                try
+                {
+                    InitializeChart();
+                }
+                catch (Exception ex)
+                {
+                    // Ignore chart initialization errors
+                    System.Diagnostics.Debug.WriteLine($"Chart init error: {ex.Message}");
+                }
+            }
             
-            // Load sample data
-            LoadSampleReportData();
+            // Load thống kê ban đầu
+            Task.Run(async () => await LoadReportStatistics());
         }
 
         private void InitializeChart()
         {
+            if (chartStatistics == null) return;
+            
             chartStatistics.Series.Clear();
             chartStatistics.ChartAreas.Clear();
             
@@ -1012,18 +1034,6 @@ namespace StudentManagement5Good.Winform
             chartStatistics.Series["Statistics"].Points.AddXY("Thể lực tốt", 78);
             chartStatistics.Series["Statistics"].Points.AddXY("Tình nguyện tốt", 65);
             chartStatistics.Series["Statistics"].Points.AddXY("Hội nhập tốt", 73);
-        }
-
-        private void btnGenerateReport_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show("Chức năng tạo báo cáo sẽ được triển khai", "Thông báo", 
-                          MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void btnExportExcel_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show("Chức năng xuất Excel sẽ được triển khai", "Thông báo", 
-                          MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnExportPDF_Click(object sender, EventArgs e)
