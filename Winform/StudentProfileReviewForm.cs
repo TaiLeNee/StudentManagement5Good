@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.DataAccess.Entity;
+using StudentManagement5GoodTempp.Services;
 
 namespace StudentManagement5Good.Winform
 {
@@ -112,81 +113,67 @@ namespace StudentManagement5Good.Winform
 
                 listViewStudents.Items.Clear();
 
-                // Build query based on filters (read-only, no tracking)
-                var query = context.SinhViens
+                string capDangChoDuyet = GetApprovalLevel(); // Lấy cấp xét của User hiện tại
+
+                // 1. Tìm các bản ghi KetQuaDanhHieu đang "Chờ duyệt" ở cấp này
+                IQueryable<KetQuaDanhHieu> hoSoChoDuyetQuery = context.KetQuaDanhHieus
                     .AsNoTracking()
-                    .Include(sv => sv.Lop)
-                    .ThenInclude(l => l.Khoa)
-                    .AsQueryable();
+                    .Where(kq => kq.MaNH == _currentNamHoc &&
+                                 kq.MaCap == capDangChoDuyet &&
+                                 kq.TrangThaiWorkflow == "DangChoDuyet")
+                    .Include(kq => kq.SinhVien)
+                        .ThenInclude(sv => sv.Lop)
+                        .ThenInclude(l => l.Khoa)
+                        .ThenInclude(k => k.Truong);
 
-                // Apply role-based filter
-                if (_currentUser.VaiTro == UserRoles.CVHT)
+                // 2. Lọc theo phạm vi quản lý của User
+                switch (_currentUser.VaiTro)
                 {
-                    query = query.Where(sv => sv.MaLop == _currentUser.MaLop);
-                }
-                else if (_currentUser.VaiTro == UserRoles.DOANKHOA || _currentUser.VaiTro == UserRoles.GIAOVU)
-                {
-                    query = query.Where(sv => sv.Lop.MaKhoa == _currentUser.MaKhoa);
+                    case UserRoles.DOANTP:
+                        hoSoChoDuyetQuery = hoSoChoDuyetQuery
+                            .Where(kq => kq.SinhVien.Lop.Khoa.Truong.MaTP == _currentUser.MaTP);
+                        break;
+                    case UserRoles.DOANTRUONG:
+                        hoSoChoDuyetQuery = hoSoChoDuyetQuery
+                            .Where(kq => kq.SinhVien.Lop.Khoa.MaTruong == _currentUser.MaTruong);
+                        break;
+                    case UserRoles.DOANKHOA:
+                    case UserRoles.GIAOVU:
+                        hoSoChoDuyetQuery = hoSoChoDuyetQuery
+                            .Where(kq => kq.SinhVien.Lop.MaKhoa == _currentUser.MaKhoa);
+                        break;
+                    case UserRoles.CVHT:
+                        hoSoChoDuyetQuery = hoSoChoDuyetQuery
+                            .Where(kq => kq.SinhVien.MaLop == _currentUser.MaLop);
+                        break;
+                    case UserRoles.ADMIN:
+                    case UserRoles.DOANTU:
+                        // Admin và TW thấy tất cả hồ sơ đang chờ ở cấp của họ
+                        break;
                 }
 
-                // Apply search filter
+                // 3. Lọc theo UI (Search)
                 if (!string.IsNullOrWhiteSpace(txtSearch.Text) && 
                     txtSearch.Text != "🔍 Tìm theo tên hoặc mã SV...")
                 {
                     var searchText = txtSearch.Text.ToLower();
-                    query = query.Where(sv => sv.MaSV.ToLower().Contains(searchText) ||
-                                            sv.HoTen.ToLower().Contains(searchText));
+                    hoSoChoDuyetQuery = hoSoChoDuyetQuery.Where(kq => kq.SinhVien.MaSV.ToLower().Contains(searchText) ||
+                                                                     kq.SinhVien.HoTen.ToLower().Contains(searchText));
                 }
 
-                var students = await query.OrderBy(sv => sv.HoTen).ToListAsync();
+                // 4. Lấy danh sách Sinh viên từ các hồ sơ chờ duyệt
+                var studentsToReview = await hoSoChoDuyetQuery
+                    .Select(kq => kq.SinhVien)
+                    .Distinct()
+                    .OrderBy(sv => sv.HoTen)
+                    .ToListAsync();
 
-                // Load evidence count for each student (read-only)
-                foreach (var student in students)
+                // 5. Populate ListView
+                foreach (var student in studentsToReview)
                 {
-                    var evidenceCount = await context.MinhChungs
-                        .AsNoTracking()
-                        .Where(mc => mc.MaSV == student.MaSV && mc.MaNH == _currentNamHoc)
-                        .CountAsync();
-
-                    var approvedCount = await context.MinhChungs
-                        .AsNoTracking()
-                        .Where(mc => mc.MaSV == student.MaSV && 
-                                   mc.MaNH == _currentNamHoc &&
-                                   mc.TrangThai == TrangThaiMinhChung.DaDuyet)
-                        .CountAsync();
-
-                    var pendingCount = await context.MinhChungs
-                        .AsNoTracking()
-                        .Where(mc => mc.MaSV == student.MaSV && 
-                                   mc.MaNH == _currentNamHoc &&
-                                   mc.TrangThai == TrangThaiMinhChung.ChoDuyet)
-                        .CountAsync();
-
-                    // Apply status filter
-                    bool shouldInclude = true;
-                    if (cmbStatusFilter.SelectedIndex == 1) // Chờ duyệt
-                    {
-                        shouldInclude = pendingCount > 0;
-                    }
-                    else if (cmbStatusFilter.SelectedIndex == 2) // Cần bổ sung
-                    {
-                        var rejectedCount = await context.MinhChungs
-                            .Where(mc => mc.MaSV == student.MaSV && 
-                                       mc.MaNH == _currentNamHoc &&
-                                       mc.TrangThai == TrangThaiMinhChung.BiTuChoi)
-                            .CountAsync();
-                        shouldInclude = rejectedCount > 0;
-                    }
-                    else if (cmbStatusFilter.SelectedIndex == 3) // Đã hoàn tất
-                    {
-                        shouldInclude = evidenceCount > 0 && pendingCount == 0;
-                    }
-
-                    if (!shouldInclude) continue;
-
-                    var item = new ListViewItem("");
+                    var item = new ListViewItem(""); // Chỗ cho avatar
                     item.SubItems.Add($"{student.HoTen}\n{student.MaSV}\n{student.Lop?.TenLop ?? "N/A"}");
-                    item.SubItems.Add($"Đã duyệt: {approvedCount}/{evidenceCount}\n⏳ Chờ: {pendingCount}");
+                    item.SubItems.Add($"Chờ duyệt {capDangChoDuyet}"); // Cập nhật tiến độ
                     item.Tag = student;
                     listViewStudents.Items.Add(item);
                 }
@@ -683,37 +670,38 @@ namespace StudentManagement5Good.Winform
             {
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
+                // Lấy workflow service từ scope
+                var workflowService = scope.ServiceProvider.GetRequiredService<IApprovalWorkflowService>();
+
+                string currentLevel = GetApprovalLevel();
 
                 // Create or update final result for KetQuaDanhHieu
                 var finalResult = await context.KetQuaDanhHieus
-                    .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent.MaSV && 
-                                            k.MaNH == _currentNamHoc);
+                    .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent!.MaSV && 
+                                            k.MaNH == _currentNamHoc &&
+                                            k.MaCap == currentLevel); // Đảm bảo lấy đúng cấp
 
                 if (finalResult == null)
                 {
                     finalResult = new KetQuaDanhHieu
                     {
                         MaKQ = Guid.NewGuid().ToString("N")[..20],
-                        MaSV = _selectedStudent.MaSV,
+                        MaSV = _selectedStudent!.MaSV,
                         MaNH = _currentNamHoc,
-                        MaCap = GetApprovalLevel(),
-                        DatDanhHieu = true,
-                        NgayDat = DateTime.Now,
-                        GhiChu = txtGeneralNote.Text
+                        MaCap = currentLevel
                     };
                     context.KetQuaDanhHieus.Add(finalResult);
                 }
-                else
-                {
-                    finalResult.MaCap = GetApprovalLevel();
-                    finalResult.DatDanhHieu = true;
-                    finalResult.NgayDat = DateTime.Now;
-                    finalResult.GhiChu = txtGeneralNote.Text;
-                }
+
+                // Cập nhật trạng thái là ĐÃ ĐẠT ở cấp này
+                finalResult.DatDanhHieu = true;
+                finalResult.TrangThaiWorkflow = "DaDat"; // Cập nhật trạng thái
+                finalResult.NgayDat = DateTime.Now;
+                finalResult.GhiChu = txtGeneralNote.Text;
 
                 // Also create KetQuaXetDuyet records for each approved criterion
                 var approvedCriteria = await context.MinhChungs
-                    .Where(mc => mc.MaSV == _selectedStudent.MaSV && 
+                    .Where(mc => mc.MaSV == _selectedStudent!.MaSV && 
                                mc.MaNH == _currentNamHoc &&
                                mc.TrangThai == TrangThaiMinhChung.DaDuyet)
                     .Select(mc => mc.MaTC)
@@ -723,19 +711,19 @@ namespace StudentManagement5Good.Winform
                 foreach (var maTC in approvedCriteria)
                 {
                     var existingResult = await context.KetQuaXetDuyets
-                        .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent.MaSV &&
+                        .FirstOrDefaultAsync(k => k.MaSV == _selectedStudent!.MaSV &&
                                                 k.MaTC == maTC &&
                                                 k.MaNH == _currentNamHoc &&
-                                                k.MaCap == GetApprovalLevel());
+                                                k.MaCap == currentLevel);
 
                     if (existingResult == null)
                     {
                         var ketQuaXetDuyet = new KetQuaXetDuyet
                         {
                             MaKQ = Guid.NewGuid().ToString("N")[..20],
-                            MaSV = _selectedStudent.MaSV,
+                            MaSV = _selectedStudent!.MaSV,
                             MaTC = maTC,
-                            MaCap = GetApprovalLevel(),
+                            MaCap = currentLevel,
                             MaNH = _currentNamHoc,
                             KetQua = true,
                             NgayXetDuyet = DateTime.Now,
@@ -748,11 +736,16 @@ namespace StudentManagement5Good.Winform
 
                 await context.SaveChangesAsync();
 
+                // *** BẮT ĐẦU WORKFLOW MỚI: CHUYỂN HỒ SƠ LÊN CẤP TRÊN ***
+                await workflowService.ChuyenHoSoLenCapTrenAsync(_selectedStudent!.MaSV, _currentNamHoc, currentLevel);
+
                 MessageBox.Show("Đã công nhận Sinh viên 5 Tốt thành công!", "Thành công",
                               MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                // Refresh queue
+                // Tải lại danh sách hàng đợi (sẽ tự động loại bỏ SV vừa duyệt)
                 await LoadStudentQueue();
+                // Ẩn thông tin SV vừa duyệt
+                ShowNoStudentSelected();
             }
             catch (Exception ex)
             {
@@ -765,10 +758,12 @@ namespace StudentManagement5Good.Winform
         {
             return _currentUser.VaiTro switch
             {
-                UserRoles.CVHT => "LOP", // Cấp lớp
-                UserRoles.DOANKHOA => "KHOA", // Cấp khoa
-                UserRoles.DOANTRUONG => "TRUONG", // Cấp trường
-                _ => "LOP"
+                UserRoles.CVHT => ManagementLevels.LOP,
+                UserRoles.DOANKHOA => ManagementLevels.KHOA,
+                UserRoles.DOANTRUONG => ManagementLevels.TRUONG,
+                UserRoles.DOANTP => ManagementLevels.TP,   // <-- THÊM VÀO
+                UserRoles.DOANTU => ManagementLevels.TU,   // <-- THÊM VÀO
+                _ => ManagementLevels.LOP // Mặc định
             };
         }
 

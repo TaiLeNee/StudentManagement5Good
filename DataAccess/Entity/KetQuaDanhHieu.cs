@@ -43,6 +43,11 @@ namespace StudentManagement5GoodTempp.DataAccess.Entity
         [MaxLength(500)]
         public string? GhiChu { get; set; }
 
+        [Column("trangThaiWorkflow")]
+        [MaxLength(20)]
+        [Required]
+        public string TrangThaiWorkflow { get; set; } = "DangChoDuyet"; // Giá trị mặc định
+
         [ForeignKey("MaSV")]
         public virtual SinhVien SinhVien { get; set; } = null!;
 

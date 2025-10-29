@@ -15,16 +15,17 @@ namespace StudentManagement5GoodTempp.Services
 
     public class StudentService : IStudentService
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IDbContextFactory<StudentManagementDbContext> _contextFactory;
 
-        public StudentService(StudentManagementDbContext context)
+        public StudentService(IDbContextFactory<StudentManagementDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task<List<SinhVien>> GetAllStudentsAsync()
         {
-            return await _context.SinhViens
+            using var context = _contextFactory.CreateDbContext();
+            return await context.SinhViens
                 .Include(s => s.Lop)
                 .ThenInclude(l => l.Khoa)
                 .ToListAsync();
@@ -32,7 +33,8 @@ namespace StudentManagement5GoodTempp.Services
 
         public async Task<SinhVien?> GetStudentByIdAsync(string studentId)
         {
-            return await _context.SinhViens
+            using var context = _contextFactory.CreateDbContext();
+            return await context.SinhViens
                 .Include(s => s.Lop)
                 .ThenInclude(l => l.Khoa)
                 .FirstOrDefaultAsync(s => s.MaSV == studentId);
@@ -42,8 +44,9 @@ namespace StudentManagement5GoodTempp.Services
         {
             try
             {
-                _context.SinhViens.Add(student);
-                await _context.SaveChangesAsync();
+                using var context = _contextFactory.CreateDbContext();
+                context.SinhViens.Add(student);
+                await context.SaveChangesAsync();
                 return true;
             }
             catch
@@ -56,8 +59,9 @@ namespace StudentManagement5GoodTempp.Services
         {
             try
             {
-                _context.SinhViens.Update(student);
-                await _context.SaveChangesAsync();
+                using var context = _contextFactory.CreateDbContext();
+                context.SinhViens.Update(student);
+                await context.SaveChangesAsync();
                 return true;
             }
             catch
@@ -70,11 +74,12 @@ namespace StudentManagement5GoodTempp.Services
         {
             try
             {
-                var student = await _context.SinhViens.FindAsync(studentId);
+                using var context = _contextFactory.CreateDbContext();
+                var student = await context.SinhViens.FindAsync(studentId);
                 if (student != null)
                 {
-                    _context.SinhViens.Remove(student);
-                    await _context.SaveChangesAsync();
+                    context.SinhViens.Remove(student);
+                    await context.SaveChangesAsync();
                     return true;
                 }
                 return false;

@@ -35,8 +35,6 @@ namespace StudentManagement5Good.Winform
             txtPhone = new TextBox();
             lblRole = new Label();
             comboBoxRole = new ComboBox();
-            lblClass = new Label();
-            comboBoxClass = new ComboBox();
             lblThanhPho = new Label();
             cmbThanhPho = new ComboBox();
             lblTruong = new Label();
@@ -72,7 +70,7 @@ namespace StudentManagement5Good.Winform
             panelMain.BackColor = Color.White;
             panelMain.Controls.AddRange(new Control[] {
                 checkBoxActive, cmbLop, lblLop, cmbKhoa, lblKhoa, cmbTruong, lblTruong,
-                cmbThanhPho, lblThanhPho, comboBoxClass, lblClass, comboBoxRole, lblRole,
+                cmbThanhPho, lblThanhPho, comboBoxRole, lblRole,
                 txtPhone, lblPhone, txtEmail, lblEmail, txtHoTen, lblHoTen,
                 txtPassword, lblPassword, txtUsername, lblUsername, txtUserId, lblUserId
             });
@@ -132,14 +130,6 @@ namespace StudentManagement5Good.Winform
             comboBoxRole.Location = new Point(200, yPos - 3);
             comboBoxRole.Size = new Size(450, 30);
             comboBoxRole.DropDownStyle = ComboBoxStyle.DropDownList;
-            
-            yPos += yStep;
-            lblClass.Text = "Lớp:";
-            lblClass.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblClass.Location = new Point(30, yPos);
-            comboBoxClass.Location = new Point(200, yPos - 3);
-            comboBoxClass.Size = new Size(450, 30);
-            comboBoxClass.DropDownStyle = ComboBoxStyle.DropDownList;
             
             yPos += yStep;
             lblThanhPho.Text = "Thành phố:";
@@ -250,8 +240,6 @@ namespace StudentManagement5Good.Winform
         private TextBox txtPhone;
         private Label lblRole;
         private ComboBox comboBoxRole;
-        private Label lblClass;
-        private ComboBox comboBoxClass;
         private Label lblThanhPho;
         private ComboBox cmbThanhPho;
         private Label lblTruong;

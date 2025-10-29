@@ -80,9 +80,18 @@ namespace StudentManagement5GoodTempp
                 options.EnableDetailedErrors(false);
             });
 
+            // Add DbContextFactory for services that need to create multiple contexts
+            services.AddDbContextFactory<StudentManagementDbContext>(options =>
+            {
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+                options.EnableSensitiveDataLogging(false);
+                options.EnableDetailedErrors(false);
+            });
+
             // Add services
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
 
             // Không cần register Login form vì chúng ta tạo trực tiếp
             // services.AddTransient<Login>();
