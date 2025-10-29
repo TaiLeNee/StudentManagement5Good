@@ -28,162 +28,218 @@ namespace StudentManagement5Good.Winform
         /// </summary>
         private void InitializeComponent()
         {
-            this.lblTitle = new System.Windows.Forms.Label();
-            this.lblNamHoc = new System.Windows.Forms.Label();
-            this.cmbNamHoc = new System.Windows.Forms.ComboBox();
-            this.groupBoxReports = new System.Windows.Forms.GroupBox();
-            this.btnExportStudentReport = new System.Windows.Forms.Button();
-            this.btnExportEvidenceReport = new System.Windows.Forms.Button();
-            this.btnExportStatisticsReport = new System.Windows.Forms.Button();
-            this.lblStatus = new System.Windows.Forms.Label();
-            this.btnClose = new System.Windows.Forms.Button();
-            this.groupBoxReports.SuspendLayout();
-            this.SuspendLayout();
+            pnlHeader = new Panel();
+            lblTitle = new Label();
+            pnlContent = new Panel();
+            groupBoxReports = new GroupBox();
+            btnExportStatisticsReport = new Button();
+            btnExportEvidenceReport = new Button();
+            btnExportStudentReport = new Button();
+            cmbNamHoc = new ComboBox();
+            lblNamHoc = new Label();
+            pnlFooter = new Panel();
+            lblStatus = new Label();
+            pnlHeader.SuspendLayout();
+            pnlContent.SuspendLayout();
+            groupBoxReports.SuspendLayout();
+            pnlFooter.SuspendLayout();
+            SuspendLayout();
+            // 
+            // pnlHeader
+            // 
+            pnlHeader.BackColor = Color.FromArgb(41, 128, 185);
+            pnlHeader.Controls.Add(lblTitle);
+            pnlHeader.Dock = DockStyle.Top;
+            pnlHeader.Location = new Point(0, 0);
+            pnlHeader.Margin = new Padding(4, 3, 4, 3);
+            pnlHeader.Name = "pnlHeader";
+            pnlHeader.Size = new Size(541, 81);
+            pnlHeader.TabIndex = 0;
             // 
             // lblTitle
             // 
-            this.lblTitle.AutoSize = true;
-            this.lblTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-            this.lblTitle.Location = new System.Drawing.Point(20, 20);
-            this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(200, 24);
-            this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "Xuất báo cáo đơn giản";
+            lblTitle.AutoSize = true;
+            lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblTitle.ForeColor = Color.White;
+            lblTitle.Location = new Point(23, 23);
+            lblTitle.Margin = new Padding(4, 0, 4, 0);
+            lblTitle.Name = "lblTitle";
+            lblTitle.Size = new Size(283, 30);
+            lblTitle.TabIndex = 0;
+            lblTitle.Text = "📋 Xuất báo cáo đơn giản";
             // 
-            // lblNamHoc
+            // pnlContent
             // 
-            this.lblNamHoc.AutoSize = true;
-            this.lblNamHoc.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblNamHoc.Location = new System.Drawing.Point(20, 60);
-            this.lblNamHoc.Name = "lblNamHoc";
-            this.lblNamHoc.Size = new System.Drawing.Size(70, 17);
-            this.lblNamHoc.TabIndex = 1;
-            this.lblNamHoc.Text = "Năm học:";
-            // 
-            // cmbNamHoc
-            // 
-            this.cmbNamHoc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbNamHoc.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmbNamHoc.FormattingEnabled = true;
-            this.cmbNamHoc.Location = new System.Drawing.Point(100, 57);
-            this.cmbNamHoc.Name = "cmbNamHoc";
-            this.cmbNamHoc.Size = new System.Drawing.Size(350, 24);
-            this.cmbNamHoc.TabIndex = 2;
+            pnlContent.BackColor = Color.White;
+            pnlContent.Controls.Add(groupBoxReports);
+            pnlContent.Controls.Add(cmbNamHoc);
+            pnlContent.Controls.Add(lblNamHoc);
+            pnlContent.Dock = DockStyle.Fill;
+            pnlContent.Location = new Point(0, 81);
+            pnlContent.Margin = new Padding(4, 3, 4, 3);
+            pnlContent.Name = "pnlContent";
+            pnlContent.Padding = new Padding(29, 29, 29, 12);
+            pnlContent.Size = new Size(541, 337);
+            pnlContent.TabIndex = 1;
             // 
             // groupBoxReports
             // 
-            this.groupBoxReports.Controls.Add(this.btnExportStatisticsReport);
-            this.groupBoxReports.Controls.Add(this.btnExportEvidenceReport);
-            this.groupBoxReports.Controls.Add(this.btnExportStudentReport);
-            this.groupBoxReports.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBoxReports.Location = new System.Drawing.Point(20, 100);
-            this.groupBoxReports.Name = "groupBoxReports";
-            this.groupBoxReports.Size = new System.Drawing.Size(450, 180);
-            this.groupBoxReports.TabIndex = 3;
-            this.groupBoxReports.TabStop = false;
-            this.groupBoxReports.Text = "Chọn loại báo cáo";
-            // 
-            // btnExportStudentReport
-            // 
-            this.btnExportStudentReport.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
-            this.btnExportStudentReport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnExportStudentReport.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnExportStudentReport.ForeColor = System.Drawing.Color.White;
-            this.btnExportStudentReport.Location = new System.Drawing.Point(20, 30);
-            this.btnExportStudentReport.Name = "btnExportStudentReport";
-            this.btnExportStudentReport.Size = new System.Drawing.Size(400, 35);
-            this.btnExportStudentReport.TabIndex = 0;
-            this.btnExportStudentReport.Text = "📊 Báo cáo danh sách sinh viên 5 tốt";
-            this.btnExportStudentReport.UseVisualStyleBackColor = false;
-            this.btnExportStudentReport.Click += new System.EventHandler(this.btnExportStudentReport_Click);
-            // 
-            // btnExportEvidenceReport
-            // 
-            this.btnExportEvidenceReport.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
-            this.btnExportEvidenceReport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnExportEvidenceReport.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnExportEvidenceReport.ForeColor = System.Drawing.Color.White;
-            this.btnExportEvidenceReport.Location = new System.Drawing.Point(20, 80);
-            this.btnExportEvidenceReport.Name = "btnExportEvidenceReport";
-            this.btnExportEvidenceReport.Size = new System.Drawing.Size(400, 35);
-            this.btnExportEvidenceReport.TabIndex = 1;
-            this.btnExportEvidenceReport.Text = "📋 Báo cáo minh chứng";
-            this.btnExportEvidenceReport.UseVisualStyleBackColor = false;
-            this.btnExportEvidenceReport.Click += new System.EventHandler(this.btnExportEvidenceReport_Click);
+            groupBoxReports.Controls.Add(btnExportStatisticsReport);
+            groupBoxReports.Controls.Add(btnExportEvidenceReport);
+            groupBoxReports.Controls.Add(btnExportStudentReport);
+            groupBoxReports.Font = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            groupBoxReports.ForeColor = Color.FromArgb(52, 73, 94);
+            groupBoxReports.Location = new Point(33, 56);
+            groupBoxReports.Margin = new Padding(4, 3, 4, 3);
+            groupBoxReports.Name = "groupBoxReports";
+            groupBoxReports.Padding = new Padding(18, 12, 18, 17);
+            groupBoxReports.Size = new Size(465, 275);
+            groupBoxReports.TabIndex = 2;
+            groupBoxReports.TabStop = false;
+            groupBoxReports.Text = "Chọn loại báo cáo";
             // 
             // btnExportStatisticsReport
             // 
-            this.btnExportStatisticsReport.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(89)))), ((int)(((byte)(182)))));
-            this.btnExportStatisticsReport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnExportStatisticsReport.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnExportStatisticsReport.ForeColor = System.Drawing.Color.White;
-            this.btnExportStatisticsReport.Location = new System.Drawing.Point(20, 130);
-            this.btnExportStatisticsReport.Name = "btnExportStatisticsReport";
-            this.btnExportStatisticsReport.Size = new System.Drawing.Size(400, 35);
-            this.btnExportStatisticsReport.TabIndex = 2;
-            this.btnExportStatisticsReport.Text = "📈 Báo cáo thống kê tổng quan";
-            this.btnExportStatisticsReport.UseVisualStyleBackColor = false;
-            this.btnExportStatisticsReport.Click += new System.EventHandler(this.btnExportStatisticsReport_Click);
+            btnExportStatisticsReport.BackColor = Color.FromArgb(155, 89, 182);
+            btnExportStatisticsReport.Cursor = Cursors.Hand;
+            btnExportStatisticsReport.FlatAppearance.BorderSize = 0;
+            btnExportStatisticsReport.FlatAppearance.MouseDownBackColor = Color.FromArgb(142, 68, 173);
+            btnExportStatisticsReport.FlatAppearance.MouseOverBackColor = Color.FromArgb(142, 68, 173);
+            btnExportStatisticsReport.FlatStyle = FlatStyle.Flat;
+            btnExportStatisticsReport.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnExportStatisticsReport.ForeColor = Color.White;
+            btnExportStatisticsReport.Location = new Point(29, 190);
+            btnExportStatisticsReport.Margin = new Padding(4, 3, 4, 3);
+            btnExportStatisticsReport.Name = "btnExportStatisticsReport";
+            btnExportStatisticsReport.Size = new Size(403, 58);
+            btnExportStatisticsReport.TabIndex = 2;
+            btnExportStatisticsReport.Text = "📈 Báo cáo thống kê tổng quan";
+            btnExportStatisticsReport.UseVisualStyleBackColor = false;
+            btnExportStatisticsReport.Click += btnExportStatisticsReport_Click;
+            // 
+            // btnExportEvidenceReport
+            // 
+            btnExportEvidenceReport.BackColor = Color.FromArgb(46, 204, 113);
+            btnExportEvidenceReport.Cursor = Cursors.Hand;
+            btnExportEvidenceReport.FlatAppearance.BorderSize = 0;
+            btnExportEvidenceReport.FlatAppearance.MouseDownBackColor = Color.FromArgb(39, 174, 96);
+            btnExportEvidenceReport.FlatAppearance.MouseOverBackColor = Color.FromArgb(39, 174, 96);
+            btnExportEvidenceReport.FlatStyle = FlatStyle.Flat;
+            btnExportEvidenceReport.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnExportEvidenceReport.ForeColor = Color.White;
+            btnExportEvidenceReport.Location = new Point(29, 115);
+            btnExportEvidenceReport.Margin = new Padding(4, 3, 4, 3);
+            btnExportEvidenceReport.Name = "btnExportEvidenceReport";
+            btnExportEvidenceReport.Size = new Size(403, 58);
+            btnExportEvidenceReport.TabIndex = 1;
+            btnExportEvidenceReport.Text = "📋 Báo cáo minh chứng";
+            btnExportEvidenceReport.UseVisualStyleBackColor = false;
+            btnExportEvidenceReport.Click += btnExportEvidenceReport_Click;
+            // 
+            // btnExportStudentReport
+            // 
+            btnExportStudentReport.BackColor = Color.FromArgb(52, 152, 219);
+            btnExportStudentReport.Cursor = Cursors.Hand;
+            btnExportStudentReport.FlatAppearance.BorderSize = 0;
+            btnExportStudentReport.FlatAppearance.MouseDownBackColor = Color.FromArgb(41, 128, 185);
+            btnExportStudentReport.FlatAppearance.MouseOverBackColor = Color.FromArgb(41, 128, 185);
+            btnExportStudentReport.FlatStyle = FlatStyle.Flat;
+            btnExportStudentReport.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnExportStudentReport.ForeColor = Color.White;
+            btnExportStudentReport.Location = new Point(29, 40);
+            btnExportStudentReport.Margin = new Padding(4, 3, 4, 3);
+            btnExportStudentReport.Name = "btnExportStudentReport";
+            btnExportStudentReport.Size = new Size(403, 58);
+            btnExportStudentReport.TabIndex = 0;
+            btnExportStudentReport.Text = "📊 Báo cáo danh sách sinh viên 5 tốt";
+            btnExportStudentReport.UseVisualStyleBackColor = false;
+            btnExportStudentReport.Click += btnExportStudentReport_Click;
+            // 
+            // cmbNamHoc
+            // 
+            cmbNamHoc.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbNamHoc.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            cmbNamHoc.FormattingEnabled = true;
+            cmbNamHoc.Location = new Point(192, 25);
+            cmbNamHoc.Margin = new Padding(4, 3, 4, 3);
+            cmbNamHoc.Name = "cmbNamHoc";
+            cmbNamHoc.Size = new Size(274, 25);
+            cmbNamHoc.TabIndex = 1;
+            // 
+            // lblNamHoc
+            // 
+            lblNamHoc.AutoSize = true;
+            lblNamHoc.Font = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblNamHoc.ForeColor = Color.FromArgb(52, 73, 94);
+            lblNamHoc.Location = new Point(29, 29);
+            lblNamHoc.Margin = new Padding(4, 0, 4, 0);
+            lblNamHoc.Name = "lblNamHoc";
+            lblNamHoc.Size = new Size(73, 19);
+            lblNamHoc.TabIndex = 0;
+            lblNamHoc.Text = "Năm học:";
+            // 
+            // pnlFooter
+            // 
+            pnlFooter.BackColor = Color.FromArgb(236, 240, 241);
+            pnlFooter.Controls.Add(lblStatus);
+            pnlFooter.Dock = DockStyle.Bottom;
+            pnlFooter.Location = new Point(0, 418);
+            pnlFooter.Margin = new Padding(4, 3, 4, 3);
+            pnlFooter.Name = "pnlFooter";
+            pnlFooter.Size = new Size(541, 69);
+            pnlFooter.TabIndex = 2;
             // 
             // lblStatus
             // 
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblStatus.Location = new System.Drawing.Point(20, 300);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(50, 15);
-            this.lblStatus.TabIndex = 4;
-            this.lblStatus.Text = "Sẵn sàng";
-            // 
-            // btnClose
-            // 
-            this.btnClose.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(149)))), ((int)(((byte)(165)))), ((int)(((byte)(166)))));
-            this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClose.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnClose.ForeColor = System.Drawing.Color.White;
-            this.btnClose.Location = new System.Drawing.Point(350, 320);
-            this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(100, 35);
-            this.btnClose.TabIndex = 5;
-            this.btnClose.Text = "Đóng";
-            this.btnClose.UseVisualStyleBackColor = false;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            lblStatus.AutoSize = true;
+            lblStatus.Font = new Font("Segoe UI", 9F, FontStyle.Italic, GraphicsUnit.Point, 0);
+            lblStatus.ForeColor = Color.FromArgb(127, 140, 141);
+            lblStatus.Location = new Point(29, 25);
+            lblStatus.Margin = new Padding(4, 0, 4, 0);
+            lblStatus.Name = "lblStatus";
+            lblStatus.Size = new Size(71, 15);
+            lblStatus.TabIndex = 0;
+            lblStatus.Text = "✅ Sẵn sàng";
             // 
             // SimpleReportForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(484, 361);
-            this.Controls.Add(this.btnClose);
-            this.Controls.Add(this.lblStatus);
-            this.Controls.Add(this.groupBoxReports);
-            this.Controls.Add(this.cmbNamHoc);
-            this.Controls.Add(this.lblNamHoc);
-            this.Controls.Add(this.lblTitle);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "SimpleReportForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Xuất báo cáo đơn giản";
-            this.groupBoxReports.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.White;
+            ClientSize = new Size(541, 487);
+            Controls.Add(pnlContent);
+            Controls.Add(pnlFooter);
+            Controls.Add(pnlHeader);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(4, 3, 4, 3);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "SimpleReportForm";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Xuất báo cáo đơn giản";
+            pnlHeader.ResumeLayout(false);
+            pnlHeader.PerformLayout();
+            pnlContent.ResumeLayout(false);
+            pnlContent.PerformLayout();
+            groupBoxReports.ResumeLayout(false);
+            pnlFooter.ResumeLayout(false);
+            pnlFooter.PerformLayout();
+            ResumeLayout(false);
 
         }
 
         #endregion
 
+        private System.Windows.Forms.Panel pnlHeader;
         private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Panel pnlContent;
         private System.Windows.Forms.Label lblNamHoc;
         private System.Windows.Forms.ComboBox cmbNamHoc;
         private System.Windows.Forms.GroupBox groupBoxReports;
         private System.Windows.Forms.Button btnExportStudentReport;
         private System.Windows.Forms.Button btnExportEvidenceReport;
         private System.Windows.Forms.Button btnExportStatisticsReport;
+        private System.Windows.Forms.Panel pnlFooter;
         private System.Windows.Forms.Label lblStatus;
-        private System.Windows.Forms.Button btnClose;
     }
 }

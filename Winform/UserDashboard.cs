@@ -81,6 +81,9 @@ namespace StudentManagement5Good.Winform
             // Initialize filters
             InitializeFilters();
             
+            // Initialize Report Module UI (new design)
+            InitializeReportModuleUI();
+            
             // Start timer for real-time updates
             _refreshTimer = new System.Windows.Forms.Timer();
             _refreshTimer.Interval = 60000; // Update every minute

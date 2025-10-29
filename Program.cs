@@ -92,6 +92,9 @@ namespace StudentManagement5GoodTempp
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
+            
+            // Add report services
+            services.AddScoped<SimpleReportService>();
 
             // Không cần register Login form vì chúng ta tạo trực tiếp
             // services.AddTransient<Login>();
@@ -101,6 +104,7 @@ namespace StudentManagement5GoodTempp
             services.AddTransient<StudentDashboard>();
             // services.AddTransient<MinhChungApprovalForm>();
             services.AddTransient<MinhChungForm>();
+            services.AddTransient<SimpleReportForm>();
 
             // Add other services as needed
             // services.AddScoped<IOtherService, OtherService>();

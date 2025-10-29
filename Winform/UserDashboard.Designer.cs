@@ -421,8 +421,6 @@
             // panelMainContent
             // 
             panelMainContent.BackColor = Color.FromArgb(236, 240, 241);
-            panelMainContent.Controls.Add(panelSystemConfigModule);
-            panelMainContent.Controls.Add(panelReportsModule);
             panelMainContent.Controls.Add(panelUserManagementModule);
             panelMainContent.Controls.Add(panelApprovalModule);
             panelMainContent.Controls.Add(panelDashboardModule);
@@ -452,7 +450,7 @@
             tabControlConfig.Controls.Add(tabPageDeadlines);
             tabControlConfig.Controls.Add(tabPageSystemSettings);
             tabControlConfig.Font = new Font("Segoe UI", 10F);
-            tabControlConfig.Location = new Point(26, 60);
+            tabControlConfig.Location = new Point(23, 58);
             tabControlConfig.Margin = new Padding(3, 2, 3, 2);
             tabControlConfig.Name = "tabControlConfig";
             tabControlConfig.SelectedIndex = 0;
@@ -528,7 +526,7 @@
             dataGridViewAcademicYears.AllowUserToDeleteRows = false;
             dataGridViewAcademicYears.BackgroundColor = Color.White;
             dataGridViewAcademicYears.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewAcademicYears.Location = new Point(18, 45);
+            dataGridViewAcademicYears.Location = new Point(36, 79);
             dataGridViewAcademicYears.Margin = new Padding(3, 2, 3, 2);
             dataGridViewAcademicYears.Name = "dataGridViewAcademicYears";
             dataGridViewAcademicYears.ReadOnly = true;
@@ -970,6 +968,7 @@
             // 
             // panelReportsModule
             // 
+            panelReportsModule.Controls.Add(panelSystemConfigModule);
             panelReportsModule.Controls.Add(dataGridViewReports);
             panelReportsModule.Controls.Add(panelReportOptions);
             panelReportsModule.Controls.Add(lblReportsTitle);
@@ -1003,12 +1002,12 @@
             dataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText;
             dataGridViewCellStyle2.WrapMode = DataGridViewTriState.False;
             dataGridViewReports.DefaultCellStyle = dataGridViewCellStyle2;
-            dataGridViewReports.Location = new Point(516, 150);
+            dataGridViewReports.Location = new Point(29, 150);
             dataGridViewReports.Margin = new Padding(3, 2, 3, 2);
             dataGridViewReports.Name = "dataGridViewReports";
             dataGridViewReports.ReadOnly = true;
             dataGridViewReports.RowHeadersWidth = 51;
-            dataGridViewReports.Size = new Size(464, 375);
+            dataGridViewReports.Size = new Size(951, 375);
             dataGridViewReports.TabIndex = 3;
             // 
             // panelReportOptions
@@ -1170,6 +1169,7 @@
             // 
             // panelUserManagementModule
             // 
+            panelUserManagementModule.Controls.Add(panelReportsModule);
             panelUserManagementModule.Controls.Add(dataGridViewUsers);
             panelUserManagementModule.Controls.Add(panelUserActions);
             panelUserManagementModule.Controls.Add(lblUserManagementTitle);

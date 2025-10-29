@@ -8,44 +8,53 @@ using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using StudentManagement5GoodTempp.DataAccess.Context;
 using StudentManagement5GoodTempp.DataAccess.Entity;
+using StudentManagement5Good.Extensions;
 
 namespace StudentManagement5GoodTempp.Services
 {
     /// <summary>
     /// Service xuất báo cáo đơn giản sử dụng ClosedXML
+    /// REFACTORED: Dùng IDbContextFactory thay vì DbContext trực tiếp
     /// </summary>
     public class SimpleReportService
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IDbContextFactory<StudentManagementDbContext> _contextFactory;
 
-        public SimpleReportService(StudentManagementDbContext context)
+        public SimpleReportService(IDbContextFactory<StudentManagementDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
         /// <summary>
         /// Xuất báo cáo danh sách sinh viên 5 tốt
         /// </summary>
-        public async Task<string> ExportStudentReportAsync(string namHoc = null)
+        public async Task<string> ExportStudentReportAsync(string? namHoc = null)
         {
             try
             {
+                // Tạo context mới cho thao tác này
+                using var context = _contextFactory.CreateDbContext();
+
                 // Lấy năm học hiện tại nếu không chỉ định
                 if (string.IsNullOrEmpty(namHoc))
                 {
-                    var currentYear = await _context.NamHocs
+                    var currentYear = await context.NamHocs
+                        .AsNoTracking()
                         .OrderByDescending(nh => nh.TuNgay)
                         .FirstOrDefaultAsync();
                     namHoc = currentYear?.MaNH ?? DateTime.Now.Year.ToString();
                 }
 
-                // Lấy dữ liệu sinh viên
-                var students = await _context.SinhViens
+                // Lấy dữ liệu sinh viên với AsNoTracking
+                var students = await context.SinhViens
+                    .AsNoTracking()
                     .Include(s => s.Lop)
-                    .ThenInclude(l => l.Khoa)
-                    .ThenInclude(k => k.Truong)
+                        .ThenInclude(l => l.Khoa)
+                            .ThenInclude(k => k.Truong)
                     .Include(s => s.MinhChungs.Where(m => m.MaNH == namHoc))
                     .Include(s => s.KetQuaDanhHieus.Where(k => k.MaNH == namHoc))
+                        .ThenInclude(kqdh => kqdh.CapXet) // QUAN TRỌNG: Include CapXet
+                    .Include(s => s.KetQuaXetDuyets.Where(k => k.MaNH == namHoc))
                     .ToListAsync();
 
                 // Tạo file Excel
@@ -86,21 +95,26 @@ namespace StudentManagement5GoodTempp.Services
         /// <summary>
         /// Xuất báo cáo minh chứng theo tiêu chí
         /// </summary>
-        public async Task<string> ExportEvidenceReportAsync(string namHoc = null)
+        public async Task<string> ExportEvidenceReportAsync(string? namHoc = null)
         {
             try
             {
+                // Tạo context mới cho thao tác này
+                using var context = _contextFactory.CreateDbContext();
+
                 // Lấy năm học hiện tại nếu không chỉ định
                 if (string.IsNullOrEmpty(namHoc))
                 {
-                    var currentYear = await _context.NamHocs
+                    var currentYear = await context.NamHocs
+                        .AsNoTracking()
                         .OrderByDescending(nh => nh.TuNgay)
                         .FirstOrDefaultAsync();
                     namHoc = currentYear?.MaNH ?? DateTime.Now.Year.ToString();
                 }
 
-                // Lấy dữ liệu minh chứng
-                var evidences = await _context.MinhChungs
+                // Lấy dữ liệu minh chứng với AsNoTracking
+                var evidences = await context.MinhChungs
+                    .AsNoTracking()
                     .Include(m => m.SinhVien)
                     .Include(m => m.TieuChi)
                     .Where(m => m.MaNH == namHoc)
@@ -136,21 +150,25 @@ namespace StudentManagement5GoodTempp.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi xuất báo cáo minh chứng: {ex.Message}");
+                throw new Exception($"Lỗi xuất báo cáo minh chứng: {ex.Message}", ex);
             }
         }
 
         /// <summary>
         /// Xuất báo cáo thống kê tổng quan
         /// </summary>
-        public async Task<string> ExportStatisticsReportAsync(string namHoc = null)
+        public async Task<string> ExportStatisticsReportAsync(string? namHoc = null)
         {
             try
             {
+                // Tạo context mới cho thao tác này
+                using var context = _contextFactory.CreateDbContext();
+
                 // Lấy năm học hiện tại nếu không chỉ định
                 if (string.IsNullOrEmpty(namHoc))
                 {
-                    var currentYear = await _context.NamHocs
+                    var currentYear = await context.NamHocs
+                        .AsNoTracking()
                         .OrderByDescending(nh => nh.TuNgay)
                         .FirstOrDefaultAsync();
                     namHoc = currentYear?.MaNH ?? DateTime.Now.Year.ToString();
@@ -164,11 +182,11 @@ namespace StudentManagement5GoodTempp.Services
                 {
                     // Sheet 1: Thống kê tổng quan
                     var statsWorksheet = workbook.Worksheets.Add("ThongKeTongQuan");
-                    await CreateStatisticsReport(statsWorksheet, namHoc);
+                    await CreateStatisticsReport(context, statsWorksheet, namHoc);
 
                     // Sheet 2: Thống kê theo tiêu chí
                     var criteriaWorksheet = workbook.Worksheets.Add("ThongKeTieuChi");
-                    await CreateCriteriaStatisticsReport(criteriaWorksheet, namHoc);
+                    await CreateCriteriaStatisticsReport(context, criteriaWorksheet, namHoc);
 
                     // Auto-fit columns
                     statsWorksheet.Columns().AdjustToContents();
@@ -182,7 +200,7 @@ namespace StudentManagement5GoodTempp.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi xuất báo cáo thống kê: {ex.Message}");
+                throw new Exception($"Lỗi xuất báo cáo thống kê: {ex.Message}", ex);
             }
         }
 
@@ -307,21 +325,24 @@ namespace StudentManagement5GoodTempp.Services
             }
         }
 
-        private async Task CreateStatisticsReport(IXLWorksheet worksheet, string namHoc)
+        private async Task CreateStatisticsReport(StudentManagementDbContext context, IXLWorksheet worksheet, string namHoc)
         {
-            // Lấy dữ liệu thống kê
-            var totalStudents = await _context.SinhViens.CountAsync();
-            var participatingStudents = await _context.MinhChungs
+            // Lấy dữ liệu thống kê với AsNoTracking
+            var totalStudents = await context.SinhViens.AsNoTracking().CountAsync();
+            var participatingStudents = await context.MinhChungs
+                .AsNoTracking()
                 .Where(m => m.MaNH == namHoc)
                 .Select(m => m.MaSV)
                 .Distinct()
                 .CountAsync();
             
-            var completedStudents = await _context.KetQuaDanhHieus
+            var completedStudents = await context.KetQuaDanhHieus
+                .AsNoTracking()
                 .Where(k => k.MaNH == namHoc)
                 .CountAsync();
             
-            var awardedStudents = await _context.KetQuaDanhHieus
+            var awardedStudents = await context.KetQuaDanhHieus
+                .AsNoTracking()
                 .Where(k => k.MaNH == namHoc && k.DatDanhHieu)
                 .CountAsync();
 
@@ -347,7 +368,7 @@ namespace StudentManagement5GoodTempp.Services
             worksheet.Cell(9, 2).Value = totalStudents > 0 ? $"{((double)awardedStudents / totalStudents * 100):F1}%" : "0%";
         }
 
-        private async Task CreateCriteriaStatisticsReport(IXLWorksheet worksheet, string namHoc)
+        private async Task CreateCriteriaStatisticsReport(StudentManagementDbContext context, IXLWorksheet worksheet, string namHoc)
         {
             // Headers
             worksheet.Cell(1, 1).Value = "THỐNG KÊ THEO TIÊU CHÍ";
@@ -366,7 +387,8 @@ namespace StudentManagement5GoodTempp.Services
             headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
 
             // Lấy dữ liệu theo tiêu chí
-            var criteriaStats = await _context.MinhChungs
+            var criteriaStats = await context.MinhChungs
+                .AsNoTracking()
                 .Include(m => m.TieuChi)
                 .Where(m => m.MaNH == namHoc)
                 .GroupBy(m => new { m.MaTC, m.TieuChi.TenTieuChi })

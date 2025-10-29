@@ -13,15 +13,19 @@ namespace StudentManagement5Good.Winform
 {
     public partial class SimpleReportForm : Form
     {
-        private readonly StudentManagementDbContext _context;
+        private readonly IDbContextFactory<StudentManagementDbContext> _contextFactory;
         private readonly User _currentUser;
         private readonly SimpleReportService _reportService;
+        private bool _isExporting = false;
 
-        public SimpleReportForm(StudentManagementDbContext context, User currentUser)
+        public SimpleReportForm(
+            IDbContextFactory<StudentManagementDbContext> contextFactory, 
+            SimpleReportService reportService,
+            User currentUser)
         {
-            _context = context;
+            _contextFactory = contextFactory;
+            _reportService = reportService;
             _currentUser = currentUser;
-            _reportService = new SimpleReportService(context);
             
             InitializeComponent();
             InitializeUI();
@@ -30,10 +34,11 @@ namespace StudentManagement5Good.Winform
         private void InitializeUI()
         {
             this.Text = "Xuất báo cáo đơn giản";
-            this.Size = new Size(500, 400);
+            this.Size = new Size(560, 520);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
+            this.BackColor = Color.White;
 
             // Load academic years
             LoadAcademicYears();
@@ -43,16 +48,17 @@ namespace StudentManagement5Good.Winform
         {
             try
             {
-                var years = await _context.NamHocs
+                using var context = _contextFactory.CreateDbContext();
+                
+                var years = await context.NamHocs
+                    .AsNoTracking()
                     .OrderByDescending(nh => nh.TuNgay)
                     .Select(nh => new { nh.MaNH, nh.TenNamHoc })
                     .ToListAsync();
 
-                cmbNamHoc.Items.Clear();
-                foreach (var year in years)
-                {
-                    cmbNamHoc.Items.Add($"{year.MaNH} - {year.TenNamHoc}");
-                }
+                cmbNamHoc.DataSource = years;
+                cmbNamHoc.DisplayMember = "TenNamHoc";
+                cmbNamHoc.ValueMember = "MaNH";
 
                 if (cmbNamHoc.Items.Count > 0)
                 {
@@ -66,13 +72,9 @@ namespace StudentManagement5Good.Winform
             }
         }
 
-        private string GetSelectedNamHoc()
+        private string? GetSelectedNamHoc()
         {
-            if (cmbNamHoc.SelectedItem == null) return null;
-            
-            var selectedText = cmbNamHoc.SelectedItem.ToString();
-            var parts = selectedText.Split(new string[] { " - " }, StringSplitOptions.None);
-            return parts.Length > 0 ? parts[0] : null;
+            return cmbNamHoc.SelectedValue?.ToString();
         }
 
         private async void btnExportStudentReport_Click(object sender, EventArgs e)
@@ -92,15 +94,23 @@ namespace StudentManagement5Good.Winform
 
         private async Task ExportReportAsync(string reportType, string reportName)
         {
+            // Prevent double-click
+            if (_isExporting)
+            {
+                return;
+            }
+
             try
             {
+                _isExporting = true;
+                
                 // Show loading
                 this.Cursor = Cursors.WaitCursor;
-                lblStatus.Text = $"Đang xuất {reportName}...";
-                lblStatus.ForeColor = Color.Blue;
+                lblStatus.Text = $"⏳ Đang xuất {reportName}...";
+                lblStatus.ForeColor = Color.FromArgb(52, 152, 219); // Blue
 
-                string filePath = null;
-                string namHoc = GetSelectedNamHoc();
+                string? filePath = null;
+                string? namHoc = GetSelectedNamHoc();
 
                 // Export based on type
                 switch (reportType)
@@ -118,8 +128,8 @@ namespace StudentManagement5Good.Winform
 
                 if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 {
-                    lblStatus.Text = $"Xuất {reportName} thành công!";
-                    lblStatus.ForeColor = Color.Green;
+                    lblStatus.Text = $"✅ Xuất {reportName} thành công!";
+                    lblStatus.ForeColor = Color.FromArgb(46, 204, 113); // Green
 
                     var result = MessageBox.Show(
                         $"{reportName} đã được xuất thành công!\n\n" +
@@ -146,13 +156,14 @@ namespace StudentManagement5Good.Winform
             }
             catch (Exception ex)
             {
-                lblStatus.Text = $"Lỗi xuất báo cáo: {ex.Message}";
-                lblStatus.ForeColor = Color.Red;
+                lblStatus.Text = $"❌ Lỗi xuất báo cáo: {ex.Message}";
+                lblStatus.ForeColor = Color.FromArgb(231, 76, 60); // Red
                 MessageBox.Show($"Lỗi xuất {reportName}: {ex.Message}", "Lỗi", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
+                _isExporting = false;
                 this.Cursor = Cursors.Default;
             }
         }
