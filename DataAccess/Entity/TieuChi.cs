@@ -35,7 +35,6 @@ namespace StudentManagement5GoodTempp.DataAccess.Entity
         public string? DonViTinh { get; set; }
 
         // Navigation Properties
-        public virtual ICollection<DanhGia> DanhGias { get; set; } = new List<DanhGia>();
         public virtual ICollection<MinhChung> MinhChungs { get; set; } = new List<MinhChung>();
         public virtual ICollection<KetQuaXetDuyet> KetQuaXetDuyets { get; set; } = new List<KetQuaXetDuyet>();
         public virtual ICollection<TieuChiYeuCau> TieuChiYeuCaus { get; set; } = new List<TieuChiYeuCau>();

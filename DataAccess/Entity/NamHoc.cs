@@ -31,7 +31,6 @@ namespace StudentManagement5GoodTempp.DataAccess.Entity
         public DateTime DenNgay { get; set; }
 
         // Navigation Properties
-        public virtual ICollection<DanhGia> DanhGias { get; set; } = new List<DanhGia>();
         public virtual ICollection<MinhChung> MinhChungs { get; set; } = new List<MinhChung>();
         public virtual ICollection<KetQuaXetDuyet> KetQuaXetDuyets { get; set; } = new List<KetQuaXetDuyet>();
         public virtual ICollection<KetQuaDanhHieu> KetQuaDanhHieus { get; set; } = new List<KetQuaDanhHieu>();

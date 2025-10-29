@@ -20,7 +20,6 @@ namespace StudentManagement5GoodTempp.DataAccess.Context
         public DbSet<CapXet> CapXets { get; set; }
         public DbSet<NamHoc> NamHocs { get; set; }
         public DbSet<TieuChiYeuCau> TieuChiYeuCaus { get; set; }
-        public DbSet<DanhGia> DanhGias { get; set; }
         public DbSet<MinhChung> MinhChungs { get; set; }
         public DbSet<KetQuaXetDuyet> KetQuaXetDuyets { get; set; }
         public DbSet<KetQuaDanhHieu> KetQuaDanhHieus { get; set; }
@@ -125,32 +124,6 @@ namespace StudentManagement5GoodTempp.DataAccess.Context
                 .HasForeignKey(ty => ty.MaCap)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // DanhGia relationships
-            modelBuilder.Entity<DanhGia>()
-                .HasOne(d => d.SinhVien)
-                .WithMany(s => s.DanhGias)
-                .HasForeignKey(d => d.MaSV)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<DanhGia>()
-                .HasOne(d => d.TieuChi)
-                .WithMany(t => t.DanhGias)
-                .HasForeignKey(d => d.MaTC)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<DanhGia>()
-                .HasOne(d => d.CapXet)
-                .WithMany(c => c.DanhGias)
-                .HasForeignKey(d => d.MaCap)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<DanhGia>()
-                .HasOne(d => d.NamHoc)
-                .WithMany(n => n.DanhGias)
-                .HasForeignKey(d => d.MaNH)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // MinhChung - DanhGia (n-1)
             // MinhChung relationships - Thiết kế mới: MinhChung độc lập
             modelBuilder.Entity<MinhChung>()
                 .HasOne(m => m.SinhVien)
@@ -266,12 +239,7 @@ namespace StudentManagement5GoodTempp.DataAccess.Context
 
             // Ràng buộc cho NamHoc
             modelBuilder.Entity<NamHoc>()
-                .HasCheckConstraint("CK_NamHoc_TuNgay_DenNgay", "tuNgay < denNgay");
-
-            // Ràng buộc cho DanhGia
-            modelBuilder.Entity<DanhGia>()
-                .Property(d => d.NgayDanhGia)
-                .HasDefaultValueSql("GETDATE()");
+                .ToTable(t => t.HasCheckConstraint("CK_NamHoc_TuNgay_DenNgay", "tuNgay < denNgay"));
 
             // Ràng buộc cho KetQuaDanhHieu
             modelBuilder.Entity<KetQuaDanhHieu>()

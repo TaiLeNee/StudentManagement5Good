@@ -23,7 +23,6 @@ namespace StudentManagement5GoodTempp.DataAccess.Entity
         public string TenCap { get; set; } = string.Empty;
 
         // Navigation Properties
-        public virtual ICollection<DanhGia> DanhGias { get; set; } = new List<DanhGia>();
         public virtual ICollection<KetQuaXetDuyet> KetQuaXetDuyets { get; set; } = new List<KetQuaXetDuyet>();
         public virtual ICollection<KetQuaDanhHieu> KetQuaDanhHieus { get; set; } = new List<KetQuaDanhHieu>();
         public virtual ICollection<TieuChiYeuCau> TieuChiYeuCaus { get; set; } = new List<TieuChiYeuCau>();
