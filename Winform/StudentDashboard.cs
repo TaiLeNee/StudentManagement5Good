@@ -338,22 +338,72 @@ namespace StudentManagement5Good.Winform
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
 
-                // Check final result with proper Include for CapXet
-                var finalResult = await context.KetQuaDanhHieus
-                    .Include(k => k.CapXet) // Include CapXet để tránh null reference
-                    .FirstOrDefaultAsync(k => k.MaSV == _currentStudent.MaSV && k.MaNH == _currentNamHoc);
+                // Lấy tất cả kết quả xét duyệt của sinh viên (bao gồm cả đã đạt và bị từ chối)
+                var allResults = await context.KetQuaDanhHieus
+                    .Where(k => k.MaSV == _currentStudent.MaSV && k.MaNH == _currentNamHoc)
+                    .OrderByDescending(k => k.NgayDat)
+                    .ToListAsync();
 
-                if (finalResult?.DatDanhHieu == true)
+                // Thứ tự ưu tiên các cấp (từ cao đến thấp)
+                var capPriority = new Dictionary<string, int>
                 {
-                    // Kiểm tra CapXet null trước khi truy cập TenCap
-                    var capXetText = finalResult.CapXet?.TenCap ?? finalResult.MaCap ?? "Không xác định";
-                    lblOverallStatus.Text = $"Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capXetText})";
-                    lblOverallStatus.ForeColor = Color.FromArgb(46, 204, 113);
+                    { "TU", 5 },
+                    { "TP", 4 },
+                    { "TRUONG", 3 },
+                    { "KHOA", 2 },
+                    { "LOP", 1 }
+                };
+
+                // Tìm cấp cao nhất đã ĐẠT
+                var highestPassed = allResults
+                    .Where(k => k.DatDanhHieu == true)
+                    .OrderByDescending(k => capPriority.ContainsKey(k.MaCap) ? capPriority[k.MaCap] : 0)
+                    .FirstOrDefault();
+
+                // Kiểm tra xem có cấp nào bị TỪ CHỐI không
+                var rejected = allResults
+                    .FirstOrDefault(k => k.TrangThaiWorkflow == "BiTuChoi");
+
+                if (highestPassed != null)
+                {
+                    // Hiển thị cấp cao nhất đã đạt
+                    var capNames = new Dictionary<string, string>
+                    {
+                        { "LOP", "Lớp" },
+                        { "KHOA", "Khoa" },
+                        { "TRUONG", "Trường" },
+                        { "TP", "Thành phố" },
+                        { "TU", "Trung ương" }
+                    };
+                    
+                    var capName = capNames.ContainsKey(highestPassed.MaCap) 
+                        ? capNames[highestPassed.MaCap] 
+                        : highestPassed.MaCap;
+
+                    if (rejected != null)
+                    {
+                        // Có cấp đã đạt nhưng bị từ chối ở cấp cao hơn
+                        lblOverallStatus.Text = $"Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capName}) - Bị từ chối cấp cao hơn";
+                        lblOverallStatus.ForeColor = Color.FromArgb(230, 126, 34); // Màu cam
+                    }
+                    else
+                    {
+                        // Đã đạt và chưa bị từ chối
+                        lblOverallStatus.Text = $"Đạt danh hiệu Sinh viên 5 Tốt (Cấp {capName})";
+                        lblOverallStatus.ForeColor = Color.FromArgb(46, 204, 113); // Màu xanh
+                    }
+                }
+                else if (rejected != null)
+                {
+                    // Chưa đạt cấp nào nhưng đã bị từ chối
+                    lblOverallStatus.Text = "Hoàn thành 5 tiêu chí - Đã bị từ chối";
+                    lblOverallStatus.ForeColor = Color.FromArgb(231, 76, 60); // Màu đỏ
                 }
                 else
                 {
+                    // Hoàn thành tiêu chí, đang chờ xét duyệt
                     lblOverallStatus.Text = "Hoàn thành 5 tiêu chí - Chờ xét duyệt";
-                    lblOverallStatus.ForeColor = Color.FromArgb(52, 152, 219);
+                    lblOverallStatus.ForeColor = Color.FromArgb(52, 152, 219); // Màu xanh dương
                 }
             }
         }
@@ -390,12 +440,36 @@ namespace StudentManagement5Good.Winform
                     item.SubItems.Add(mc.TieuChi?.TenTieuChi ?? "N/A");
                     item.SubItems.Add(mc.NgayNop.ToString("dd/MM/yyyy"));
                     
-                    // Trạng thái với màu sắc
-                    var statusSubItem = item.SubItems.Add(mc.TrangThai.ToDisplayString());
+                    // Trạng thái với màu sắc và thông tin cấp duyệt
+                    string statusText = mc.TrangThai.ToDisplayString();
+                    
+                    // Thêm thông tin cấp duyệt nếu đã được duyệt/từ chối
+                    if (mc.NguoiDuyetUser != null && (mc.TrangThai == TrangThaiMinhChung.DaDuyet || mc.TrangThai == TrangThaiMinhChung.BiTuChoi))
+                    {
+                        var capNames = new Dictionary<string, string>
+                        {
+                            { "LOP", "Lớp" },
+                            { "KHOA", "Khoa" },
+                            { "TRUONG", "Trường" },
+                            { "TP", "TP" },
+                            { "TU", "TW" }
+                        };
+                        
+                        var capDuyet = mc.NguoiDuyetUser.CapQuanLy ?? "?";
+                        var capName = capNames.ContainsKey(capDuyet) ? capNames[capDuyet] : capDuyet;
+                        statusText += $" ({capName})";
+                    }
+                    
+                    var statusSubItem = item.SubItems.Add(statusText);
                     statusSubItem.ForeColor = mc.TrangThai.ToColor();
                     
-                    // Phản hồi (lý do từ chối hoặc ghi chú)
+                    // Phản hồi (lý do từ chối hoặc ghi chú) + Người duyệt
                     var feedback = !string.IsNullOrEmpty(mc.LyDoTuChoi) ? mc.LyDoTuChoi : mc.GhiChu ?? "";
+                    if (mc.NguoiDuyetUser != null && mc.NgayDuyet.HasValue)
+                    {
+                        var nguoiDuyet = mc.NguoiDuyetUser.HoTen ?? mc.NguoiDuyetUser.UserId;
+                        feedback = $"[{nguoiDuyet} - {mc.NgayDuyet:dd/MM/yyyy}] {feedback}";
+                    }
                     item.SubItems.Add(feedback);
                     
                     item.Tag = mc;
@@ -540,6 +614,25 @@ namespace StudentManagement5Good.Winform
                     
                     if (minhchung.NgayDuyet.HasValue)
                         details += $"Ngày duyệt: {minhchung.NgayDuyet:dd/MM/yyyy HH:mm}\n";
+                    
+                    // Hiển thị người duyệt và cấp duyệt
+                    if (minhchung.NguoiDuyetUser != null)
+                    {
+                        var capNames = new Dictionary<string, string>
+                        {
+                            { "LOP", "Lớp" },
+                            { "KHOA", "Khoa" },
+                            { "TRUONG", "Trường" },
+                            { "TP", "Thành phố" },
+                            { "TU", "Trung ương" }
+                        };
+                        
+                        var capDuyet = minhchung.NguoiDuyetUser.CapQuanLy ?? "Không xác định";
+                        var capName = capNames.ContainsKey(capDuyet) ? capNames[capDuyet] : capDuyet;
+                        var nguoiDuyet = minhchung.NguoiDuyetUser.HoTen ?? minhchung.NguoiDuyetUser.UserId;
+                        
+                        details += $"Người duyệt: {nguoiDuyet} (Cấp {capName})\n";
+                    }
                     
                     if (!string.IsNullOrEmpty(minhchung.LyDoTuChoi))
                         details += $"Lý do từ chối: {minhchung.LyDoTuChoi}\n";

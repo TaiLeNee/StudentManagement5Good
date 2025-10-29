@@ -827,8 +827,8 @@ namespace StudentManagement5Good.Winform
 
                     // Open user edit form
                     using var scope = _serviceProvider.CreateScope();
-                    var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
-                    var form = new UserManagementForm(context, _currentUser, user);
+                    var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<StudentManagementDbContext>>();
+                    var form = new UserManagementForm(contextFactory, _currentUser, user);
                     if (form.ShowDialog() == DialogResult.OK)
                     {
                         LoadUserManagementData();
@@ -925,8 +925,8 @@ namespace StudentManagement5Good.Winform
             }
 
             using var scope = _serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<StudentManagementDbContext>();
-            var form = new UserManagementForm(context, _currentUser);
+            var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<StudentManagementDbContext>>();
+            var form = new UserManagementForm(contextFactory, _currentUser);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 LoadUserManagementData();

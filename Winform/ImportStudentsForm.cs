@@ -46,8 +46,8 @@ namespace StudentManagement5Good.Winform
         {
             string instructions = _currentUser.VaiTro switch
             {
-                UserRoles.GIAOVU => "Bạn có thể import toàn bộ sinh viên trong trường.",
-                UserRoles.CVHT => $"Bạn chỉ có thể import sinh viên cho lớp: {_currentUser.MaLop ?? "Chưa được gán lớp"}",
+                UserRoles.GIAOVU => "Bạn có thể import toàn bộ sinh viên trong trường. Excel cần có cột MaLop.",
+                UserRoles.CVHT => $"Sinh viên sẽ tự động được thêm vào lớp: {_currentUser.MaLop ?? "Chưa được gán lớp"}. Excel không cần cột MaLop.",
                 _ => "Bạn không có quyền import sinh viên."
             };
             
@@ -162,8 +162,20 @@ namespace StudentManagement5Good.Winform
             txtValidationResult.Clear();
             txtValidationResult.ForeColor = Color.Red;
             
-            // Check required columns
-            string[] requiredColumns = { "MaSV", "HoTen", "Email", "MaLop" };
+            // Check required columns based on user role
+            List<string> requiredColumns;
+            
+            if (_currentUser.VaiTro == UserRoles.CVHT)
+            {
+                // CVHT không cần cột MaLop (tự động lấy từ tài khoản)
+                requiredColumns = new List<string> { "MaSV", "HoTen", "Email" };
+            }
+            else
+            {
+                // GIAOVU cần cột MaLop
+                requiredColumns = new List<string> { "MaSV", "HoTen", "Email", "MaLop" };
+            }
+            
             foreach (var column in requiredColumns)
             {
                 if (!_previewData.Columns.Contains(column))
@@ -233,15 +245,29 @@ namespace StudentManagement5Good.Winform
                         string maSV = row["MaSV"].ToString()?.Trim() ?? "";
                         string hoTen = row["HoTen"].ToString()?.Trim() ?? "";
                         string email = row["Email"].ToString()?.Trim() ?? "";
-                        string maLop = row["MaLop"].ToString()?.Trim() ?? "";
                         
-                        // Validate role-based permission
+                        // Determine MaLop based on user role
+                        string maLop;
                         if (_currentUser.VaiTro == UserRoles.CVHT)
                         {
-                            if (maLop != _currentUser.MaLop)
+                            // CVHT: Use their assigned class
+                            maLop = _currentUser.MaLop ?? "";
+                            if (string.IsNullOrEmpty(maLop))
                             {
-                                txtValidationResult.AppendText($"⚠️ Bỏ qua {maSV}: Không thuộc lớp của bạn\r\n");
-                                skipCount++;
+                                txtValidationResult.AppendText($"❌ Lỗi: CVHT chưa được gán lớp\r\n");
+                                errorCount++;
+                                progressBar.Value++;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            // GIAOVU: Read from Excel
+                            maLop = row["MaLop"].ToString()?.Trim() ?? "";
+                            if (string.IsNullOrEmpty(maLop))
+                            {
+                                txtValidationResult.AppendText($"❌ Lỗi {maSV}: Thiếu mã lớp\r\n");
+                                errorCount++;
                                 progressBar.Value++;
                                 continue;
                             }
@@ -259,8 +285,13 @@ namespace StudentManagement5Good.Winform
                             continue;
                         }
                         
-                        // Check if class exists
-                        var lop = await _context.Lops.FirstOrDefaultAsync(l => l.MaLop == maLop);
+                        // Check if class exists and get related data
+                        var lop = await _context.Lops
+                            .Include(l => l.Khoa)
+                                .ThenInclude(k => k.Truong)
+                                    .ThenInclude(t => t.ThanhPho)
+                            .FirstOrDefaultAsync(l => l.MaLop == maLop);
+                            
                         if (lop == null)
                         {
                             txtValidationResult.AppendText($"❌ Lỗi {maSV}: Không tìm thấy lớp {maLop}\r\n");
@@ -283,7 +314,7 @@ namespace StudentManagement5Good.Winform
                         
                         _context.SinhViens.Add(newStudent);
                         
-                        // Create user account for student
+                        // Create user account for student with full hierarchy
                         var newUser = new User
                         {
                             UserId = $"SV_{maSV}",
@@ -293,6 +324,14 @@ namespace StudentManagement5Good.Winform
                             Email = email,
                             VaiTro = UserRoles.SINHVIEN,
                             MaSV = maSV,
+                            
+                            // Gán đầy đủ các mã phân cấp từ Lớp
+                            MaLop = maLop,
+                            MaKhoa = lop.MaKhoa,
+                            MaTruong = lop.Khoa?.MaTruong,
+                            MaTP = lop.Khoa?.Truong?.MaTP,
+                            CapQuanLy = "LOP", // Cấp quản lý của sinh viên
+                            
                             TrangThai = true,
                             NgayTao = DateTime.Now
                         };
@@ -391,29 +430,57 @@ namespace StudentManagement5Good.Winform
             {
                 var worksheet = workbook.Worksheets.Add("SinhVien");
                 
-                // Headers
-                worksheet.Cell(1, 1).Value = "MaSV";
-                worksheet.Cell(1, 2).Value = "HoTen";
-                worksheet.Cell(1, 3).Value = "Email";
-                worksheet.Cell(1, 4).Value = "NgaySinh";
-                worksheet.Cell(1, 5).Value = "GioiTinh";
-                worksheet.Cell(1, 6).Value = "SoDienThoai";
-                worksheet.Cell(1, 7).Value = "MaLop";
-                
-                // Sample data
-                worksheet.Cell(2, 1).Value = "2021001";
-                worksheet.Cell(2, 2).Value = "Nguyễn Văn A";
-                worksheet.Cell(2, 3).Value = "nguyenvana@email.com";
-                worksheet.Cell(2, 4).Value = "01/01/2003";
-                worksheet.Cell(2, 5).Value = "Nam";
-                worksheet.Cell(2, 6).Value = "0901234567";
-                worksheet.Cell(2, 7).Value = "CNTT01";
-                
-                // Style headers
-                var headerRange = worksheet.Range(1, 1, 1, 7);
-                headerRange.Style.Font.Bold = true;
-                headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
-                headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                // Headers based on user role
+                if (_currentUser.VaiTro == UserRoles.CVHT)
+                {
+                    // CVHT: Không có cột MaLop (tự động gán từ tài khoản)
+                    worksheet.Cell(1, 1).Value = "MaSV";
+                    worksheet.Cell(1, 2).Value = "HoTen";
+                    worksheet.Cell(1, 3).Value = "Email";
+                    worksheet.Cell(1, 4).Value = "NgaySinh";
+                    worksheet.Cell(1, 5).Value = "GioiTinh";
+                    worksheet.Cell(1, 6).Value = "SoDienThoai";
+                    
+                    // Sample data
+                    worksheet.Cell(2, 1).Value = "211001";
+                    worksheet.Cell(2, 2).Value = "Trần Văn An";
+                    worksheet.Cell(2, 3).Value = "an.tranvan@utc.edu.vn";
+                    worksheet.Cell(2, 4).Value = "15/03/2003";
+                    worksheet.Cell(2, 5).Value = "Nam";
+                    worksheet.Cell(2, 6).Value = "901112221";
+                    
+                    // Style headers
+                    var headerRange = worksheet.Range(1, 1, 1, 6);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+                else
+                {
+                    // GIAOVU: Có cột MaLop
+                    worksheet.Cell(1, 1).Value = "MaSV";
+                    worksheet.Cell(1, 2).Value = "HoTen";
+                    worksheet.Cell(1, 3).Value = "Email";
+                    worksheet.Cell(1, 4).Value = "NgaySinh";
+                    worksheet.Cell(1, 5).Value = "GioiTinh";
+                    worksheet.Cell(1, 6).Value = "SoDienThoai";
+                    worksheet.Cell(1, 7).Value = "MaLop";
+                    
+                    // Sample data
+                    worksheet.Cell(2, 1).Value = "211001";
+                    worksheet.Cell(2, 2).Value = "Trần Văn An";
+                    worksheet.Cell(2, 3).Value = "an.tranvan@utc.edu.vn";
+                    worksheet.Cell(2, 4).Value = "15/03/2003";
+                    worksheet.Cell(2, 5).Value = "Nam";
+                    worksheet.Cell(2, 6).Value = "901112221";
+                    worksheet.Cell(2, 7).Value = "UTC-CNTT001";
+                    
+                    // Style headers
+                    var headerRange = worksheet.Range(1, 1, 1, 7);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
                 
                 // Auto-fit columns
                 worksheet.Columns().AdjustToContents();

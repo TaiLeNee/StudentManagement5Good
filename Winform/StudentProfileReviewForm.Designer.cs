@@ -30,6 +30,7 @@ namespace StudentManagement5Good.Winform
             this.lblQueueTitle = new System.Windows.Forms.Label();
             this.panelRightProfile = new System.Windows.Forms.Panel();
             this.panelFinalDecision = new System.Windows.Forms.Panel();
+            this.btnRejectAll = new System.Windows.Forms.Button();
             this.btnApproveAll = new System.Windows.Forms.Button();
             this.txtGeneralNote = new System.Windows.Forms.TextBox();
             this.lblGeneralNote = new System.Windows.Forms.Label();
@@ -205,6 +206,7 @@ namespace StudentManagement5Good.Winform
             // 
             this.panelFinalDecision.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(247)))), ((int)(((byte)(250)))));
             this.panelFinalDecision.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelFinalDecision.Controls.Add(this.btnRejectAll);
             this.panelFinalDecision.Controls.Add(this.btnApproveAll);
             this.panelFinalDecision.Controls.Add(this.txtGeneralNote);
             this.panelFinalDecision.Controls.Add(this.lblGeneralNote);
@@ -215,6 +217,23 @@ namespace StudentManagement5Good.Winform
             this.panelFinalDecision.Padding = new System.Windows.Forms.Padding(15);
             this.panelFinalDecision.Size = new System.Drawing.Size(936, 140);
             this.panelFinalDecision.TabIndex = 3;
+            // 
+            // btnRejectAll
+            // 
+            this.btnRejectAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(76)))), ((int)(((byte)(60)))));
+            this.btnRejectAll.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnRejectAll.Enabled = false;
+            this.btnRejectAll.FlatAppearance.BorderSize = 0;
+            this.btnRejectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRejectAll.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            this.btnRejectAll.ForeColor = System.Drawing.Color.White;
+            this.btnRejectAll.Location = new System.Drawing.Point(423, 15);
+            this.btnRejectAll.Name = "btnRejectAll";
+            this.btnRejectAll.Size = new System.Drawing.Size(248, 108);
+            this.btnRejectAll.TabIndex = 4;
+            this.btnRejectAll.Text = "❌ Từ chối\r\nSinh viên 5 Tốt";
+            this.btnRejectAll.UseVisualStyleBackColor = false;
+            this.btnRejectAll.Click += new System.EventHandler(this.btnRejectAll_Click);
             // 
             // btnApproveAll
             // 
@@ -464,6 +483,7 @@ namespace StudentManagement5Good.Winform
         private System.Windows.Forms.TabPage tabPageTinhNguyen;
         private System.Windows.Forms.TabPage tabPageHoiNhap;
         private System.Windows.Forms.Panel panelFinalDecision;
+        private System.Windows.Forms.Button btnRejectAll;
         private System.Windows.Forms.Button btnApproveAll;
         private System.Windows.Forms.TextBox txtGeneralNote;
         private System.Windows.Forms.Label lblGeneralNote;
