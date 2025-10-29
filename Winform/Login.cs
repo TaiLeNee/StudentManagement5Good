@@ -22,10 +22,10 @@ namespace StudentManagement5Good
         }
 
         // Constructor mặc định - chỉ dùng cho designer
-        public Login() 
-        { 
+        public Login()
+        {
             InitializeComponent();
-            
+
             // Nếu không có serviceProvider, tạo một instance tạm thời cho designer
             if (_serviceProvider == null && !DesignMode)
             {
@@ -54,16 +54,19 @@ namespace StudentManagement5Good
                 // Focus on username textbox
                 userNameTxt.Focus();
 
-                // Set form title
-                this.Text = "Đăng nhập - Hệ thống Quản lý Sinh viên 5 Tốt";
+                // Add Enter key support
+                userNameTxt.KeyPress += (s, ev) => { if (ev.KeyChar == (char)Keys.Enter) { passwordTxt.Focus(); ev.Handled = true; } };
+                passwordTxt.KeyPress += (s, ev) => { if (ev.KeyChar == (char)Keys.Enter) { loginbtn.PerformClick(); ev.Handled = true; } };
+
+                // Add hover effects for login button
+                loginbtn.MouseEnter += (s, ev) => loginbtn.BackColor = Color.FromArgb(52, 152, 219);
+                loginbtn.MouseLeave += (s, ev) => loginbtn.BackColor = Color.FromArgb(41, 128, 185);
 
                 // Test connection by getting count of records (for development only)
-                var studentCount = await context.SinhViens.CountAsync();
-                var khoaCount = await context.Khoas.CountAsync();
                 var userCount = await context.Users.CountAsync();
 
                 // Display connection status in the form title (for development)
-                this.Text += $" | DB: {userCount} users, {studentCount} students, {khoaCount} faculties";
+                this.Text = $"Đăng nhập - Hệ thống Quản lý Sinh viên 5 Tốt | {userCount} users";
             }
             catch (Exception ex)
             {
@@ -78,7 +81,7 @@ namespace StudentManagement5Good
                 // Kiểm tra ServiceProvider
                 if (_serviceProvider == null)
                 {
-                    MessageBox.Show("Lỗi hệ thống: ServiceProvider không được khởi tạo!", "Lỗi", 
+                    MessageBox.Show("Lỗi hệ thống: ServiceProvider không được khởi tạo!", "Lỗi",
                                   MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
@@ -89,8 +92,12 @@ namespace StudentManagement5Good
 
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
-                    MessageBox.Show("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!", 
+                    MessageBox.Show("⚠ Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!",
                                   "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    if (string.IsNullOrWhiteSpace(username))
+                        userNameTxt.Focus();
+                    else
+                        passwordTxt.Focus();
                     return;
                 }
 
@@ -98,6 +105,7 @@ namespace StudentManagement5Good
                 this.Cursor = Cursors.WaitCursor;
                 loginbtn.Enabled = false;
                 loginbtn.Text = "Đang đăng nhập...";
+                loginbtn.BackColor = Color.FromArgb(149, 165, 166);
 
                 // Create new scope for authentication
                 using var scope = _serviceProvider.CreateScope();
@@ -110,12 +118,12 @@ namespace StudentManagement5Good
                 if (_currentUser != null)
                 {
                     // Login successful
-                    MessageBox.Show($"Đăng nhập thành công!\nChào mừng {_currentUser.HoTen}\nVai trò: {GetRoleDisplayName(_currentUser.VaiTro)}", 
+                    MessageBox.Show($"✅ Đăng nhập thành công!\n\nChào mừng {_currentUser.HoTen}\nVai trò: {GetRoleDisplayName(_currentUser.VaiTro)}",
                                   "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     // Hide login form and show appropriate dashboard based on role
                     this.Hide();
-                    
+
                     // Choose dashboard based on user role
                     if (_currentUser.VaiTro == UserRoles.SINHVIEN)
                     {
@@ -129,24 +137,28 @@ namespace StudentManagement5Good
                         var adminDashboard = new UserDashboard(_serviceProvider, userService, studentService, _currentUser);
                         adminDashboard.ShowDialog();
                     }
-                    
+
                     // Close login form when dashboard is closed
                     this.Close();
                 }
                 else
                 {
                     // Login failed
-                    MessageBox.Show("Tên đăng nhập hoặc mật khẩu không chính xác!", 
+                    MessageBox.Show("❌ Tên đăng nhập hoặc mật khẩu không chính xác!",
                                   "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    
-                    // Clear password field
+
+                    // Clear password field and reset placeholder
                     passwordTxt.Clear();
-                    passwordTxt.Focus();
+                    passwordTxt.UseSystemPasswordChar = false;
+                    passwordTxt.Text = "Nhập mật khẩu...";
+                    passwordTxt.ForeColor = Color.Gray;
+                    userNameTxt.Focus();
+                    userNameTxt.SelectAll();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi trong quá trình đăng nhập: {ex.Message}", 
+                MessageBox.Show($"Lỗi trong quá trình đăng nhập: {ex.Message}",
                               "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -154,13 +166,14 @@ namespace StudentManagement5Good
                 // Restore UI state
                 this.Cursor = Cursors.Default;
                 loginbtn.Enabled = true;
-                loginbtn.Text = "Đăng nhập";
+                loginbtn.Text = "ĐĂNG NHẬP";
+                loginbtn.BackColor = Color.FromArgb(52, 152, 219);
             }
         }
 
         private void exitBtn_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Bạn có chắc chắn muốn thoát?", "Xác nhận", 
+            if (MessageBox.Show("Bạn có chắc chắn muốn thoát?", "Xác nhận",
                               MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 Application.Exit();
@@ -170,6 +183,26 @@ namespace StudentManagement5Good
         private void gradientPanel1_Paint(object sender, PaintEventArgs e)
         {
             // Custom paint logic if needed
+        }
+
+        private void btnTogglePassword_Click(object sender, EventArgs e)
+        {
+            if (passwordTxt.UseSystemPasswordChar)
+            {
+                passwordTxt.UseSystemPasswordChar = false;
+                btnTogglePassword.Text = "🙈";
+            }
+            else
+            {
+                passwordTxt.UseSystemPasswordChar = true;
+                btnTogglePassword.Text = "👁️";
+            }
+        }
+
+        private void linkLabelForgotPassword_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            MessageBox.Show("Vui lòng liên hệ quản trị viên để được hỗ trợ khôi phục mật khẩu.",
+                          "Quên mật khẩu", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         #region Helper Methods
@@ -228,5 +261,15 @@ namespace StudentManagement5Good
         }
 
         #endregion
+
+        private void lblPasswordIcon_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblSystemName_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
